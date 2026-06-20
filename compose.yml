@@ -1,0 +1,20 @@
+services:
+  ish-libation:
+    image: ghcr.io/maroishiku/ish-libation:latest
+    container_name: ish-libation
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Berlin
+      PORT: 3000
+      LIBATION_FILES_DIR: /config
+      LIBATION_CONFIG_DIR: /config
+      LIBATION_DB_DIR: /db
+      LIBATION_BOOKS_DIR: /data
+      PUBLIC_IP_URL: https://api.ipify.org?format=json
+      PUBLIC_IP_INTERVAL_SECONDS: 300
+    volumes:
+      - ./config:/config
+      - ./db:/db
+      - ./data:/data
+    ports:
+      - "3000:3000"

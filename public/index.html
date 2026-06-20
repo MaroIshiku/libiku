@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ish-libation</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>ish-libation</h1>
+        <p id="versionLine">Libation WebUI wird geladen</p>
+      </div>
+      <div class="status-strip">
+        <button id="refreshIpButton" class="icon-button" title="Public IP aktualisieren">IP</button>
+        <div>
+          <span class="label">Public IP</span>
+          <strong id="publicIp">...</strong>
+        </div>
+        <div>
+          <span class="label">Jobs</span>
+          <strong id="jobCount">0 aktiv</strong>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Views">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="library">Library</button>
+      <button class="tab" data-view="accounts">Accounts</button>
+      <button class="tab" data-view="settings">Settings</button>
+      <button class="tab" data-view="logs">Logs</button>
+    </nav>
+
+    <main>
+      <section id="dashboard" class="view active">
+        <div class="action-row">
+          <button data-action="scan">Refresh</button>
+          <button data-action="liberate">Liberate All</button>
+          <button data-action="set-status">Status Check</button>
+          <button data-action="convert">Convert</button>
+        </div>
+        <div class="metrics">
+          <div>
+            <span class="label">Config</span>
+            <strong id="configPath">...</strong>
+          </div>
+          <div>
+            <span class="label">Database</span>
+            <strong id="dbPath">...</strong>
+          </div>
+          <div>
+            <span class="label">Books</span>
+            <strong id="booksPath">...</strong>
+          </div>
+        </div>
+        <div class="split">
+          <section>
+            <h2>Aktive Jobs</h2>
+            <div id="activeJobs" class="list empty">Keine aktiven Jobs</div>
+          </section>
+          <section>
+            <h2>Letzte Jobs</h2>
+            <div id="recentJobs" class="list empty">Noch keine Jobs</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="library" class="view">
+        <div class="toolbar">
+          <input id="librarySearch" type="search" placeholder="Titel, ASIN, Autor oder Serie" />
+          <select id="libraryStatus">
+            <option value="all">Alle Status</option>
+            <option value="missing">Nicht geladen</option>
+            <option value="downloaded">Geladen</option>
+            <option value="error">Fehler</option>
+          </select>
+          <button id="loadLibraryButton">Reload</button>
+        </div>
+        <div id="libraryMeta" class="note"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Autor / Serie</th>
+                <th>Status</th>
+                <th>ASIN</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="libraryRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="accounts" class="view">
+        <div class="split">
+          <section>
+            <div class="section-title">
+              <h2>Accounts</h2>
+              <button id="loadAccountsButton">Reload</button>
+            </div>
+            <div id="accountsList" class="list empty">Keine Accounts geladen</div>
+          </section>
+          <section>
+            <h2>Login External</h2>
+            <form id="loginForm" class="form-grid">
+              <label>
+                Account
+                <input name="account" type="email" required placeholder="you@example.com" />
+              </label>
+              <label>
+                Locale
+                <input name="locale" required placeholder="de" />
+              </label>
+              <label class="wide">
+                Response URL
+                <textarea name="responseUrl" rows="4" placeholder="Optional: nach Audible-Login hier einfuegen"></textarea>
+              </label>
+              <button type="submit">Login Job starten</button>
+            </form>
+          </section>
+        </div>
+        <section>
+          <h2>Account Import</h2>
+          <form id="importForm" class="form-grid">
+            <label class="wide">
+              audible-cli JSON
+              <textarea name="json" rows="7" placeholder="{ ... }"></textarea>
+            </label>
+            <button type="submit">Import Job starten</button>
+          </form>
+        </section>
+      </section>
+
+      <section id="settings" class="view">
+        <div class="toolbar">
+          <button id="loadSettingsButton">Reload</button>
+          <button id="saveSettingsButton">Settings speichern</button>
+          <button id="saveAccountsSettingsButton">Accounts speichern</button>
+        </div>
+        <div class="split">
+          <section>
+            <h2>Settings.json</h2>
+            <textarea id="settingsEditor" class="code-editor" spellcheck="false"></textarea>
+          </section>
+          <section>
+            <h2>AccountsSettings.json</h2>
+            <textarea id="accountsSettingsEditor" class="code-editor" spellcheck="false"></textarea>
+          </section>
+        </div>
+      </section>
+
+      <section id="logs" class="view">
+        <div class="toolbar">
+          <select id="jobSelector"></select>
+          <button id="loadJobButton">Logs laden</button>
+        </div>
+        <pre id="jobLogs" class="logs">Kein Job ausgewaehlt</pre>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
