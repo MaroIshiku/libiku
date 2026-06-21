@@ -1,42 +1,76 @@
 services:
   gluetun:
     image: qmcgaw/gluetun:latest
+    pull_policy: always
     container_name: gluetun
+    hostname: gluetun
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
     restart: unless-stopped
     environment:
-      TZ: Europe/Berlin
-      VPN_SERVICE_PROVIDER: custom
-      VPN_TYPE: wireguard
-      WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY}
-      WIREGUARD_ADDRESSES: ${WIREGUARD_ADDRESSES}
-      WIREGUARD_ENDPOINT_IP: ${WIREGUARD_ENDPOINT_IP}
-      WIREGUARD_ENDPOINT_PORT: ${WIREGUARD_ENDPOINT_PORT}
-      WIREGUARD_PUBLIC_KEY: ${WIREGUARD_PUBLIC_KEY}
-      FIREWALL_INPUT_PORTS: 3000
+      TZ: ${TZ:-Europe/Berlin}
+      VPN_SERVICE_PROVIDER: ${VPN_SERVICE_PROVIDER:-mullvad}
+      VPN_TYPE: ${VPN_TYPE:-wireguard}
+      WIREGUARD_PRIVATE_KEY: ${WIREGUARD_PRIVATE_KEY:?Set WIREGUARD_PRIVATE_KEY in ZimaOS environment}
+      WIREGUARD_ADDRESSES: ${WIREGUARD_ADDRESSES:?Set WIREGUARD_ADDRESSES in ZimaOS environment}
+      DNS_UPSTREAM_PLAIN_ADDRESSES: ${DNS_UPSTREAM_PLAIN_ADDRESSES:-10.64.0.1}
+      FIREWALL_INPUT_PORTS: ${FIREWALL_INPUT_PORTS:-3000}
+      FIREWALL_OUTBOUND_SUBNETS: ${FIREWALL_OUTBOUND_SUBNETS:-10.64.0.1/32}
+      HTTP_CONTROL_SERVER: ${HTTP_CONTROL_SERVER:-on}
+      HTTP_CONTROL_SERVER_ADDRESS: ${HTTP_CONTROL_SERVER_ADDRESS:-:8000}
+      LOG_LEVEL: ${GLUETUN_LOG_LEVEL:-info}
     ports:
-      - "3000:3000"
+      - "${WEBUI_PORT:-3000}:3000/tcp"
+    volumes:
+      - ${APP_DATA_DIR:-/DATA/AppData/ish-libation}/gluetun:/gluetun
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9999 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   ish-libation:
     image: ghcr.io/maroishiku/ish-libation:latest
+    pull_policy: always
     container_name: ish-libation
+    hostname: ish-libation
+    user: "${PUID:-0}:${PGID:-0}"
     restart: unless-stopped
     network_mode: "service:gluetun"
     depends_on:
-      - gluetun
+      gluetun:
+        condition: service_healthy
     environment:
-      TZ: Europe/Berlin
-      PORT: 3000
+      TZ: ${TZ:-Europe/Berlin}
+      PORT: ${CONTAINER_PORT:-3000}
       LIBATION_FILES_DIR: /config
       LIBATION_CONFIG_DIR: /config
       LIBATION_DB_DIR: /db
+      LIBATION_DB_FILE: ${LIBATION_DB_FILE:-}
       LIBATION_BOOKS_DIR: /data
-      PUBLIC_IP_URL: https://api.ipify.org?format=json
-      PUBLIC_IP_INTERVAL_SECONDS: 300
+      PUBLIC_IP_URL: ${PUBLIC_IP_URL:-https://api.ipify.org?format=json}
+      PUBLIC_IP_INTERVAL_SECONDS: ${PUBLIC_IP_INTERVAL_SECONDS:-300}
+      NODE_ENV: production
     volumes:
-      - ./config:/config
-      - ./db:/db
-      - ./data:/data
+      - ${APP_DATA_DIR:-/DATA/AppData/ish-libation}/config:/config
+      - ${APP_DATA_DIR:-/DATA/AppData/ish-libation}/db:/db
+      - ${BOOKS_DIR:-/DATA/Media/Audiobooks/Libation}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

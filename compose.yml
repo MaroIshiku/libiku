@@ -1,20 +1,36 @@
 services:
   ish-libation:
     image: ghcr.io/maroishiku/ish-libation:latest
+    pull_policy: always
     container_name: ish-libation
+    hostname: ish-libation
+    user: "${PUID:-0}:${PGID:-0}"
     restart: unless-stopped
     environment:
-      TZ: Europe/Berlin
-      PORT: 3000
+      TZ: ${TZ:-Europe/Berlin}
+      PORT: ${CONTAINER_PORT:-3000}
       LIBATION_FILES_DIR: /config
       LIBATION_CONFIG_DIR: /config
       LIBATION_DB_DIR: /db
+      LIBATION_DB_FILE: ${LIBATION_DB_FILE:-}
       LIBATION_BOOKS_DIR: /data
-      PUBLIC_IP_URL: https://api.ipify.org?format=json
-      PUBLIC_IP_INTERVAL_SECONDS: 300
+      PUBLIC_IP_URL: ${PUBLIC_IP_URL:-https://api.ipify.org?format=json}
+      PUBLIC_IP_INTERVAL_SECONDS: ${PUBLIC_IP_INTERVAL_SECONDS:-300}
+      NODE_ENV: production
     volumes:
-      - ./config:/config
-      - ./db:/db
-      - ./data:/data
+      - ${APP_DATA_DIR:-/DATA/AppData/ish-libation}/config:/config
+      - ${APP_DATA_DIR:-/DATA/AppData/ish-libation}/db:/db
+      - ${BOOKS_DIR:-/DATA/Media/Audiobooks/Libation}:/data
     ports:
-      - "3000:3000"
+      - "${WEBUI_PORT:-3000}:3000/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -25,17 +25,26 @@ The included GitHub Actions workflow publishes multi-arch images to GHCR on push
 
 ## ZimaOS compose
 
-Direct mode:
+The compose files are ready for ZimaOS Docker apps and use persistent host paths below `/DATA` by default:
+
+| Host path | Container path | Purpose |
+| --- | --- | --- |
+| `/DATA/AppData/ish-libation/config` | `/config` | Libation settings and accounts files |
+| `/DATA/AppData/ish-libation/db` | `/db` | Libation database |
+| `/DATA/AppData/ish-libation/gluetun` | `/gluetun` | Gluetun state and server data |
+| `/DATA/Media/Audiobooks/Libation` | `/data` | Downloaded books |
+
+Direct mode without VPN:
 
 ```bash
 docker compose -f compose.yml up -d
 ```
 
-Gluetun mode:
+Recommended Gluetun mode:
 
 ```bash
 cp .env.example .env
-# fill in the WireGuard values
+# fill in WIREGUARD_PRIVATE_KEY and WIREGUARD_ADDRESSES
 docker compose -f compose.gluetun.yml up -d
 ```
 
@@ -51,6 +60,8 @@ The Gluetun firewall must also allow the WebUI port. The provided compose file s
 ```yaml
 FIREWALL_INPUT_PORTS: 3000
 ```
+
+For ZimaOS, the default runtime user is `PUID=0` and `PGID=0` to avoid bind-mount permission issues on `/DATA/...`. If your folders are owned by a specific user/group, set `PUID` and `PGID` in `.env`.
 
 Open:
 
@@ -71,6 +82,10 @@ http://<zimaos-host>:3000
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `3000` | WebUI port inside the container |
+| `WEBUI_PORT` | `3000` | Host port exposed by Docker/ZimaOS |
+| `APP_DATA_DIR` | `/DATA/AppData/ish-libation` | Base path for config, db and Gluetun data |
+| `BOOKS_DIR` | `/DATA/Media/Audiobooks/Libation` | Host path for downloaded books |
+| `PUID` / `PGID` | `0` / `0` | Runtime user for bind-mount writes |
 | `LIBATION_FILES_DIR` | `/config` | Directory passed to Libation CLI |
 | `LIBATION_DB_DIR` | `/db` | Directory searched for `*.db` |
 | `LIBATION_DB_FILE` | empty | Optional explicit database filename |
