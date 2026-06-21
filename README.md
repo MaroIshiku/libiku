@@ -68,6 +68,8 @@ The Gluetun firewall must also allow the WebUI port. The provided compose file s
 FIREWALL_INPUT_PORTS: 3000
 ```
 
+The compose file intentionally does not set `DNS_UPSTREAM_PLAIN_ADDRESSES`; Gluetun's own documentation recommends keeping the built-in DNS forwarding defaults instead of pointing plain DNS directly at a VPN-provider DNS address.
+
 For ZimaOS, the WebUI container runs as `0:0` to avoid bind-mount permission issues on `/media/ZimaOS-HD/...`.
 
 Open:
