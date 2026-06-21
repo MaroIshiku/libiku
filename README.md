@@ -46,6 +46,11 @@ network_mode: "service:gluetun"
 ```
 
 That means port `3000` is published on the `gluetun` service, not on `ish-libation`.
+The Gluetun firewall must also allow the WebUI port. The provided compose file sets:
+
+```yaml
+FIREWALL_INPUT_PORTS: 3000
+```
 
 Open:
 

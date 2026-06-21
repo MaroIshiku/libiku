@@ -72,13 +72,17 @@ async function ensureJsonFile(filePath, fallback) {
 
 async function readJsonFile(filePath, fallback = {}) {
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = stripBom(await fs.readFile(filePath, "utf8"));
     if (!raw.trim()) return fallback;
     return JSON.parse(raw);
   } catch (error) {
     if (error.code === "ENOENT") return fallback;
     throw error;
   }
+}
+
+function stripBom(value) {
+  return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
 }
 
 async function writeJsonFile(filePath, value) {
@@ -91,7 +95,14 @@ async function initializeLibationFiles() {
   await ensureJsonFile(path.join(config.libationFilesDir, "AccountsSettings.json"), {});
 
   const settingsPath = path.join(config.libationFilesDir, "Settings.json");
-  const settings = await readJsonFile(settingsPath, {});
+  const settings = await readJsonFile(settingsPath, {}).catch((error) => {
+    console.error(`Settings.json could not be parsed during startup: ${error.message}`);
+    return {};
+  });
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    console.error("Settings.json is not a JSON object; startup defaults were skipped.");
+    return;
+  }
   let changed = false;
   if (!settings.Books) {
     settings.Books = config.booksDir;
