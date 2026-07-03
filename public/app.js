@@ -240,7 +240,7 @@ function loginTemplate() {
       <section class="psu-auth-window" role="dialog" aria-modal="true" aria-label="Libiku sign in">
         ${setupBrand()}
         <form id="authForm" class="psu-form-stack">
-          ${fieldTemplate("username", "Admin username", "text", "username", true, "auth_username")}
+          ${fieldTemplate("username", "Username", "text", "username", true, "auth_username")}
           ${fieldTemplate("password", "Password", "password", "current-password", true, "auth_password")}
           <p id="authError" class="psu-field-error" hidden></p>
           <div class="psu-setup-actions">
