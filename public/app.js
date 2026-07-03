@@ -237,15 +237,14 @@ function registerTemplate() {
 function loginTemplate() {
   return `
     <main class="psu-setup-screen">
-      <section class="psu-auth-window" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <section class="psu-auth-window" role="dialog" aria-modal="true" aria-label="Libiku sign in">
         ${setupBrand()}
         <form id="authForm" class="psu-form-stack">
-          <h2 id="loginTitle" class="center-title">Admin Login</h2>
           ${fieldTemplate("username", "Admin username", "text", "username", true, "auth_username")}
           ${fieldTemplate("password", "Password", "password", "current-password", true, "auth_password")}
           <p id="authError" class="psu-field-error" hidden></p>
           <div class="psu-setup-actions">
-            <button class="psu-button psu-button--filled" type="submit">Log in</button>
+            <button class="psu-button psu-button--filled psu-button--full" type="submit">Sign in</button>
           </div>
         </form>
       </section>
