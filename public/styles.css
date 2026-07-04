@@ -277,6 +277,38 @@ svg {
   margin-block: var(--space-4);
 }
 
+.account-panel-button {
+  inline-size: 100%;
+  border: 0;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.account-panel-chevron {
+  inline-size: 22px;
+  block-size: 22px;
+  align-self: center;
+  color: var(--color-on-surface-muted);
+}
+
+.account-edit-view,
+.compact-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.account-back-button {
+  justify-self: start;
+}
+
+.account-back-button svg {
+  inline-size: 22px;
+  block-size: 22px;
+}
+
 .sheet-block h3 {
   color: var(--color-on-surface);
   font-size: var(--type-title-medium-size);
@@ -339,7 +371,7 @@ svg {
   block-size: 1px;
 }
 
-#toast {
+.psu-toast-host {
   position: fixed;
   inset-inline: auto var(--space-4);
   inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom));
@@ -358,7 +390,7 @@ svg {
   pointer-events: none;
 }
 
-#toast.visible {
+.psu-toast-host.visible {
   opacity: 1;
   transform: translateY(0);
 }

@@ -218,6 +218,35 @@ function validateSetupInput(body, setupSecret) {
   };
 }
 
+function validateAccountInput(body) {
+  const displayName = String(body.displayName || "").trim();
+  const username = String(body.username || "").trim();
+  const email = String(body.email || "").trim();
+  const currentPassword = String(body.currentPassword || "");
+  const newPassword = String(body.newPassword || "");
+  const passwordConfirm = String(body.passwordConfirm || "");
+  const errors = {};
+
+  if (!displayName) errors.displayName = "Display name is required.";
+  if (!/^[a-zA-Z0-9._-]{3,80}$/.test(username)) errors.username = "Username must be 3-80 characters.";
+  if (email.length > 180) errors.email = "Email is too long.";
+  if (newPassword || passwordConfirm) {
+    if (!currentPassword) errors.currentPassword = "Current password is required.";
+    if (newPassword.length < 12) errors.newPassword = "New password must be at least 12 characters.";
+    if (newPassword !== passwordConfirm) errors.passwordConfirm = "Passwords do not match.";
+    const normalized = newPassword.trim().toLowerCase();
+    if (placeholderPasswords.has(normalized) || [username.toLowerCase(), config.appId, config.appName.toLowerCase()].includes(normalized)) {
+      errors.newPassword = "Choose a stronger password.";
+    }
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+    values: { displayName, username, email, currentPassword, newPassword, wantsPassword: Boolean(newPassword || passwordConfirm) }
+  };
+}
+
 function parseCookies(req) {
   return Object.fromEntries(
     String(req.headers.cookie || "")
@@ -949,8 +978,32 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true }, { "Set-Cookie": clearSessionCookie() });
   }
 
-  if (!getSession(req)) {
+  const session = getSession(req);
+  if (!session) {
     return sendJson(res, 401, { error: "Authentication required", status: 401 });
+  }
+
+  if (method === "PUT" && pathname === "/api/account") {
+    const body = await readJsonBody(req);
+    const validation = validateAccountInput(body);
+    if (!validation.valid) return sendJson(res, 400, { error: "Account input is invalid.", details: validation.errors });
+    const store = await readAuthStore();
+    const user = store.admins.find((admin) => admin.id === session.user.id);
+    if (!user) return sendJson(res, 404, { error: "Account not found" });
+    if (store.admins.some((admin) => admin.id !== user.id && admin.username.toLowerCase() === validation.values.username.toLowerCase())) {
+      return sendJson(res, 409, { error: "Username is already taken", details: { username: "Username is already taken." } });
+    }
+    if (validation.values.wantsPassword && !(await verifyPassword(validation.values.currentPassword, user.passwordHash))) {
+      return sendJson(res, 403, { error: "Current password is invalid.", details: { currentPassword: "Current password is invalid." } });
+    }
+    user.displayName = validation.values.displayName;
+    user.username = validation.values.username;
+    user.email = validation.values.email;
+    if (validation.values.wantsPassword) user.passwordHash = await hashPassword(validation.values.newPassword);
+    store.audit = [...store.audit, { at: nowIso(), event: "account_updated", userId: user.id }].slice(-100);
+    await writeAuthStore(store);
+    session.user = user;
+    return sendJson(res, 200, { ok: true, user: publicUser(user) });
   }
 
   if (method === "GET" && pathname === "/api/status") {

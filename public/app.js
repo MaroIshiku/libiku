@@ -57,7 +57,7 @@ async function api(path, options = {}) {
 }
 
 function toast(message) {
-  const element = $("#toast");
+  const element = $("#psu-toast-host");
   element.textContent = message;
   element.classList.add("visible");
   clearTimeout(toast.timer);
@@ -103,6 +103,7 @@ function renderAuthGate() {
     $("#settingsAccountName").textContent = displayName;
     $("#profileButton").textContent = initialsFromName(displayName);
     $("#settingsAvatar").textContent = initialsFromName(displayName);
+    hydrateAccountForm();
     return;
   }
 
@@ -169,6 +170,26 @@ function renderAuthGate() {
       setFormBusy(form, false);
     }
   });
+}
+
+function hydrateAccountForm() {
+  const user = state.session?.user;
+  if (!user) return;
+  $("#accountDisplayName").value = user.displayName || user.username || "";
+  $("#accountUsername").value = user.username || "";
+  $("#accountEmail").value = user.email || "";
+  $("#accountError").textContent = "";
+}
+
+function showAccountEditor(open) {
+  $("#accountEditView").hidden = !open;
+  $("#accountPanelButton").hidden = open;
+  $("#settingsSheet .sheet-block").hidden = open;
+  $("#settingsSheet .psu-list").hidden = open;
+  if (open) {
+    hydrateAccountForm();
+    requestAnimationFrame(() => $("#accountDisplayName")?.focus());
+  }
 }
 
 function setupBrand() {
@@ -621,6 +642,29 @@ function wireEvents() {
   $("#saveSettingsButton").addEventListener("click", () => saveSettings("settings").catch((error) => toast(error.message)));
   $("#saveAccountsSettingsButton").addEventListener("click", () => saveSettings("accounts").catch((error) => toast(error.message)));
   $("#loadJobButton").addEventListener("click", () => loadSelectedJobLogs().catch((error) => toast(error.message)));
+  $("#accountPanelButton").addEventListener("click", () => showAccountEditor(true));
+  $("#accountBackButton").addEventListener("click", () => showAccountEditor(false));
+  $("#accountForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const submit = form.querySelector("button[type='submit']");
+    $("#accountError").textContent = "";
+    submit.disabled = true;
+    try {
+      const payload = await api("/api/account", {
+        method: "PUT",
+        body: JSON.stringify(Object.fromEntries(new FormData(form).entries()))
+      });
+      state.session.user = payload.user;
+      renderAuthGate();
+      showAccountEditor(false);
+      toast("Account saved");
+    } catch (error) {
+      $("#accountError").textContent = error.message;
+    } finally {
+      submit.disabled = false;
+    }
+  });
   $("#logoutButton").addEventListener("click", async () => {
     await api("/api/logout", { method: "POST" });
     state.session = await refreshSession();
