@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "kit_version": "1.0.2",
+  "kit_version": "1.1.0",
   "managed": [
     {
       "path": ".agents/skills/ishiku-design-review/agents/openai.yaml",
@@ -8,7 +8,7 @@
     },
     {
       "path": ".agents/skills/ishiku-design-review/SKILL.md",
-      "sha256": "601a715fc3c384661ef88ab2a75e23688ecbe13fa64590223f928dd0f1d707cf"
+      "sha256": "4ee109173f3c5d1409b7a7a3025ab07051313cb3383a54e0f02b233ea40c62a6"
     },
     {
       "path": ".agents/skills/ishiku-docker-review/agents/openai.yaml",
@@ -100,7 +100,7 @@
     },
     {
       "path": ".ishiku/kit/platform.yaml",
-      "sha256": "ed0881caa4a50a92f72679e8b7d3abcf1a80cda389461eb7961b412e3fad96fc"
+      "sha256": "b31f6ac916a3861537581232819fa45a4c828ea77c1fb373c0241e61c2bfe998"
     },
     {
       "path": ".ishiku/kit/policies/architecture.md",
@@ -131,6 +131,14 @@
       "sha256": "700a25eb02ce8648dce9dfe0fcb837f593b90363de629d141ed8330e03178bfd"
     },
     {
+      "path": ".ishiku/kit/schemas/design-lock.schema.json",
+      "sha256": "6b7dbd6cf8416e82b7fdcebe9a02d79e09d94d57243e7c2e39f80698ee34319d"
+    },
+    {
+      "path": ".ishiku/kit/schemas/design-system.schema.json",
+      "sha256": "8166f10fd040aa95bac9a64ab5ced3d9e82701dd66508aada72b86e78afeb770"
+    },
+    {
       "path": ".ishiku/kit/schemas/kit-manifest.schema.json",
       "sha256": "c6025b19a9708f9ed16350f10a2c58b824dce9e6af8d25f4e45895d28f120fb0"
     },
@@ -140,11 +148,11 @@
     },
     {
       "path": ".ishiku/kit/schemas/platform.schema.json",
-      "sha256": "26f0613e64774fa93baea59efede2cdef24e6dbef72a4be765d89d13a3d92e61"
+      "sha256": "13f3b5c85d9f7862c3b4424af965ada44ddb48e47b8d077be463c4af6e4e1aff"
     },
     {
       "path": ".ishiku/kit/schemas/project.schema.json",
-      "sha256": "9ebb5530b45e6b65277ca4a82b95dd9a018fcd8cbbc5e5e7f833cb57d69db14d"
+      "sha256": "2ddab140736b268d9ee54313003423418f351268dc55a1e8fb2d9315e2f47659"
     },
     {
       "path": ".ishiku/kit/schemas/traceability.schema.json",
@@ -187,12 +195,16 @@
       "sha256": "60ae15ce55597270ee588ab24918780b49032529b9a16b9496d9f0a1169c443b"
     },
     {
+      "path": ".ishiku/kit/scripts/design-system",
+      "sha256": "bd2aed9537085b4e8d389a8e220829dda7dab66b300b7a8b5dbe3e8f8b30207c"
+    },
+    {
       "path": ".ishiku/kit/scripts/generate-traceability",
       "sha256": "a92a44483fa326cc0b9189222e3fdee52919545a8ccf4355207966cb313a1c1a"
     },
     {
       "path": ".ishiku/kit/scripts/ishiku.mjs",
-      "sha256": "50ea8d7e8c27d0f67c6dc682432363ce461b695bd1f8a83d3703cdcf89035a79"
+      "sha256": "61cac152693ba1baf62214785781085d0cc92d8c01d13660789411865dc0d553"
     },
     {
       "path": ".ishiku/kit/scripts/soak-test",
@@ -204,7 +216,7 @@
     },
     {
       "path": ".ishiku/kit/version.yaml",
-      "sha256": "944993047a5a39fc95a54f581fbcf7de6430f71d99bd4230d1d25c38ddae6c92"
+      "sha256": "fc6d8841d41820e87638ac4b7c533bd229770a22ac49eda5e015f9d195a07c6e"
     }
   ],
   "application_owned": [
@@ -215,6 +227,7 @@
     ".ishiku/decisions/"
   ],
   "generated": [
+    ".ishiku/design-system.lock",
     ".ishiku/reports/"
   ],
   "allowed_overrides": [

@@ -23,7 +23,7 @@
       "properties": {
         "profile": { "type": "string" },
         "authentication": { "enum": ["standard-account", "dropiku-totp-vault", "meiku-client-vault"] },
-        "design_system": { "const": "ishiku-design-1" },
+        "design_system": { "const": "ishiku-design-5" },
         "security_baseline": { "const": "level-2" },
         "locale": { "const": "en" }
       }

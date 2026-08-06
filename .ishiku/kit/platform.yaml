@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "platform_version": "1.0.0",
+  "platform_version": "1.1.0",
   "family": "ishiku",
   "locale": "en",
   "new_app_profile": {
@@ -16,6 +16,14 @@
     "default": "revocable-server-session",
     "password_hash": "argon2id",
     "single_vault_exceptions": ["dropiku", "meiku"]
+  },
+  "design_system": {
+    "id": "ishiku-design-5",
+    "version": "5.0.0",
+    "contract": "design-system/contract.json",
+    "schema": "schemas/design-system.schema.json",
+    "locale": "en",
+    "full_contract_copies_in_apps": false
   },
   "updates": {
     "timezone": "Europe/Berlin",

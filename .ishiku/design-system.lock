@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "contract": {
+    "id": "ishiku-design-5",
+    "version": "5.0.0",
+    "sha256": "46628d1b69e5c27c3a339a31afbb7c3bed8d148b2fb0916c975407d86e9a1516"
+  },
+  "application": {
+    "id": "libiku",
+    "authentication": "standard-account",
+    "locale": "en"
+  },
+  "implementation": [
+    {
+      "path": "public/design-system/components.css",
+      "sha256": "8d1c794eb1b5ef9e031d32f4d92f448bcdf4de8266d7910bc56a0cdb1017aeb7",
+      "roles": [
+        "components"
+      ]
+    },
+    {
+      "path": "public/design-system/theme-controller.js",
+      "sha256": "6878cd8bf0d62f5bd23ac6477e5ed161fdc6c98aaacb695e4f4d38b7ae1c976b",
+      "roles": [
+        "theme-controller"
+      ]
+    },
+    {
+      "path": "public/design-system/tokens.css",
+      "sha256": "baa3a0b362f59dcfc365240a3fd3f5697cbcdb2546319037f3faccec01f9d1a3",
+      "roles": [
+        "tokens"
+      ]
+    },
+    {
+      "path": "public/icons/psu-icons.svg",
+      "sha256": "194bae32660f50af3938a72c1141f138e5c4150ca5634c3c036564a76e92bd94",
+      "roles": [
+        "icons"
+      ]
+    }
+  ]
+}

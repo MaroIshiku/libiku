@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "kit_version": "1.0.2",
+  "kit_version": "1.1.0",
   "application": {
     "id": "libiku",
     "name": "Libiku",
@@ -10,7 +10,7 @@
   "platform": {
     "profile": "node-libation-adapter",
     "authentication": "standard-account",
-    "design_system": "ishiku-design-1",
+    "design_system": "ishiku-design-5",
     "security_baseline": "level-2",
     "locale": "en"
   },
