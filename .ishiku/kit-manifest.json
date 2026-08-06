@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "kit_version": "1.0.1",
+  "kit_version": "1.0.2",
   "managed": [
     {
       "path": ".agents/skills/ishiku-design-review/agents/openai.yaml",
-      "sha256": "3dbac0074cde4c8f47a9179a4ffd16c5d217a6f9b2692c436ba396cb88f71071"
+      "sha256": "2db3cd631650f0f10dc66d549cb736c6a54bfd7663ab90e1ba60a57ad12f4a94"
     },
     {
       "path": ".agents/skills/ishiku-design-review/SKILL.md",
@@ -12,7 +12,7 @@
     },
     {
       "path": ".agents/skills/ishiku-docker-review/agents/openai.yaml",
-      "sha256": "9b30bc0213d28bbe9c081ddf87a2e4779d4ead75a1cfee8b78ead25cd1a5bc3e"
+      "sha256": "697aeaebb03daf9c9eaa502fff5c44a56840fa0756337044409f016d7e479d30"
     },
     {
       "path": ".agents/skills/ishiku-docker-review/SKILL.md",
@@ -20,7 +20,7 @@
     },
     {
       "path": ".agents/skills/ishiku-github-release/agents/openai.yaml",
-      "sha256": "127826d4a54f3cc537b00c525fb4d004a604fff8397d5b547bf5a7be832ee30e"
+      "sha256": "79ac15f19af9fdb872514eaff671225bf1a098dd8fa280771addf3e3355d9d90"
     },
     {
       "path": ".agents/skills/ishiku-github-release/SKILL.md",
@@ -28,7 +28,7 @@
     },
     {
       "path": ".agents/skills/ishiku-modernize-app/agents/openai.yaml",
-      "sha256": "4a1d47008afd97bcec21108790bfd9c6aa50cf4a58b9596d8ce232ff927bbfba"
+      "sha256": "ae35779625d7f83b4c744d761387df2605ecde7254fdfa881d8d9c7125408507"
     },
     {
       "path": ".agents/skills/ishiku-modernize-app/SKILL.md",
@@ -36,7 +36,7 @@
     },
     {
       "path": ".agents/skills/ishiku-new-app/agents/openai.yaml",
-      "sha256": "c7ecb85ae479949310fe028d3e93c4c0464c7a18cdf9fec67930805d48ab5e13"
+      "sha256": "b5e8ea48086b235a8cc69485fa099b30f5d2f0c60a507497813f52e378ba79cc"
     },
     {
       "path": ".agents/skills/ishiku-new-app/SKILL.md",
@@ -44,7 +44,7 @@
     },
     {
       "path": ".agents/skills/ishiku-orchestrator/agents/openai.yaml",
-      "sha256": "e7c5ef9f9f6a4eb34603ff271e873866505fe76210fdb7894b9ce9435ee88dca"
+      "sha256": "a56abf2433942d083a209567e686523d827f5c8b239f72c122bda7e4f627f202"
     },
     {
       "path": ".agents/skills/ishiku-orchestrator/SKILL.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": ".agents/skills/ishiku-project-analysis/agents/openai.yaml",
-      "sha256": "91154a6546ecd77958f49f9b66576ac0ffb6c380c6d13fcc50b299cf4433b1b6"
+      "sha256": "8fa635580cd717f92321ba4ee43fa1e79c48c7bbe1cb19dd19af5c670aa720f6"
     },
     {
       "path": ".agents/skills/ishiku-project-analysis/SKILL.md",
@@ -60,7 +60,7 @@
     },
     {
       "path": ".agents/skills/ishiku-security-review/agents/openai.yaml",
-      "sha256": "c9619a53afe150f10d7c83aaa13c2009b5370acb7d262dfad7660a7eab9eaa5e"
+      "sha256": "a17e5964b51aae5eede4dc9f3e1406b19c22f62374f3507cb128da6067e406b4"
     },
     {
       "path": ".agents/skills/ishiku-security-review/SKILL.md",
@@ -68,7 +68,7 @@
     },
     {
       "path": ".agents/skills/ishiku-test-engineer/agents/openai.yaml",
-      "sha256": "f6c1903ee15030c221b8224ca82a21b6cc07ebbc7eb22813e8e88ff388bd5095"
+      "sha256": "1cbdf9141e56574af5bae16306b807deb1baef3730e054d2b68c88da4a28d665"
     },
     {
       "path": ".agents/skills/ishiku-test-engineer/SKILL.md",
@@ -76,7 +76,7 @@
     },
     {
       "path": ".agents/skills/ishiku-upstream-maintenance/agents/openai.yaml",
-      "sha256": "e3c10f092098edd602575e42ebac7444540cbe9d66767d5e601e70ff875bd24e"
+      "sha256": "f6b69bb16a8955284adc4587b1eb16460ab0c993ae919df769726238935480bb"
     },
     {
       "path": ".agents/skills/ishiku-upstream-maintenance/SKILL.md",
@@ -192,7 +192,7 @@
     },
     {
       "path": ".ishiku/kit/scripts/ishiku.mjs",
-      "sha256": "74c1790e1bcbda4b3395cd4c75fd461f228473cd0337b7c8e3f217aec4cbdf71"
+      "sha256": "50ea8d7e8c27d0f67c6dc682432363ce461b695bd1f8a83d3703cdcf89035a79"
     },
     {
       "path": ".ishiku/kit/scripts/soak-test",
@@ -204,7 +204,7 @@
     },
     {
       "path": ".ishiku/kit/version.yaml",
-      "sha256": "2cb7d50e1c34ae5e9f22716fde8b6d53f2defb64329c913c2a8834a616742a9c"
+      "sha256": "944993047a5a39fc95a54f581fbcf7de6430f71d99bd4230d1d25c38ddae6c92"
     }
   ],
   "application_owned": [

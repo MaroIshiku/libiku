@@ -28,8 +28,20 @@ function writeJson(file, value) {
   writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
-function sha256(file) {
+function sha256Raw(file) {
   return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
+function sha256(file) {
+  const body = readFileSync(file);
+  const normalized = body.includes(0)
+    ? body
+    : Buffer.from(body.toString('utf8').replaceAll('\r\n', '\n'), 'utf8');
+  return createHash('sha256').update(normalized).digest('hex');
+}
+
+function matchesSha(file, expected) {
+  return sha256(file) === expected || sha256Raw(file) === expected;
 }
 
 function walk(root, predicate = () => true) {
@@ -288,7 +300,7 @@ function findConflicts(repo, manifest) {
   const allowed = new Set(manifest.allowed_overrides ?? []);
   return (manifest.managed ?? []).filter((item) => {
     const target = join(repo, item.path);
-    return existsSync(target) && sha256(target) !== item.sha256 && !allowed.has(item.path);
+    return existsSync(target) && !matchesSha(target, item.sha256) && !allowed.has(item.path);
   }).map((item) => item.path);
 }
 
@@ -345,7 +357,7 @@ function syncOne(appRoot) {
     for (const item of previousManifest.managed ?? []) {
       if (desired.has(item.path)) continue;
       const target = join(repo, item.path);
-      if (existsSync(target) && sha256(target) === item.sha256) unlinkSync(target);
+      if (existsSync(target) && matchesSha(target, item.sha256)) unlinkSync(target);
     }
   }
   const version = parseConfig(join(source.kit, 'version.yaml'));
