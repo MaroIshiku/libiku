@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "rules": {
+    "direct_dependencies": "exact-or-lockfile-pinned",
+    "github_actions": "full-commit-sha",
+    "containers": "version-and-digest-for-release",
+    "floating_tags_forbidden": ["latest", "master", "main"],
+    "licenses": { "allow": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"], "review": ["GPL-2.0", "GPL-3.0", "AGPL-3.0", "unknown"] }
+  },
+  "updates": { "timezone": "Europe/Berlin", "cron": "0 5 * * 1" },
+  "required_evidence": ["lockfile", "tests", "dependency-scan", "license-review", "rollback-note"]
+}

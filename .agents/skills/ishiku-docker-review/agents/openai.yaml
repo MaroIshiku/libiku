@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-docker-review"
+  short_description: "Review and verify ishiku container delivery"
+  default_prompt: "Use $ishiku-docker-review to harden and verify Docker and Compose delivery for this app."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-new-app"
+  short_description: "Create a complete new ishiku application"
+  default_prompt: "Use $ishiku-new-app to scaffold and verify a new ishiku app from an approved AppSpec."

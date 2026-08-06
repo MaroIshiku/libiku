@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/project.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kit_version", "application", "platform", "quality", "updates", "repository", "verification", "upstreams"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kit_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "application": {
+      "type": "object",
+      "required": ["id", "name", "family", "type"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "name": { "type": "string", "minLength": 2 },
+        "family": { "const": "ishiku" },
+        "type": { "const": "web_application" }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "required": ["profile", "authentication", "design_system", "security_baseline", "locale"],
+      "properties": {
+        "profile": { "type": "string" },
+        "authentication": { "enum": ["standard-account", "dropiku-totp-vault", "meiku-client-vault"] },
+        "design_system": { "const": "ishiku-design-1" },
+        "security_baseline": { "const": "level-2" },
+        "locale": { "const": "en" }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["default_risk_class", "soak_test_required_for"],
+      "properties": {
+        "default_risk_class": { "enum": ["A", "B", "C", "D"] },
+        "soak_test_required_for": { "type": "array", "items": { "enum": ["C", "D"] }, "uniqueItems": true }
+      }
+    },
+    "updates": {
+      "type": "object",
+      "required": ["timezone", "weekly_schedule"],
+      "properties": {
+        "timezone": { "const": "Europe/Berlin" },
+        "weekly_schedule": {
+          "type": "object",
+          "required": ["day", "time"],
+          "properties": { "day": { "const": "monday" }, "time": { "const": "05:00" } }
+        }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "required": ["default_branch", "container_registry"],
+      "properties": {
+        "default_branch": { "type": "string", "minLength": 1 },
+        "container_registry": { "const": "ghcr.io" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["commands"],
+      "properties": {
+        "commands": { "type": "array", "items": { "type": "object", "required": ["name", "command"], "properties": { "name": { "type": "string" }, "command": { "type": "string" }, "required_for_verified": { "type": "boolean" } } } }
+      }
+    },
+    "upstreams": { "type": "array", "items": { "type": "object", "required": ["id", "source", "strategy"], "properties": { "id": { "type": "string" }, "source": { "type": "string" }, "strategy": { "enum": ["dependency", "container", "generated", "adapter"] } } } }
+  }
+}

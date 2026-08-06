@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-test-engineer"
+  short_description: "Design and run the ishiku verification suite"
+  default_prompt: "Use $ishiku-test-engineer to map requirements to tests and run all applicable verification gates."

@@ -1,19 +1,33 @@
 # syntax=docker/dockerfile:1.7
 
 ARG LIBATION_REPO=https://github.com/rmcrackan/Libation.git
-ARG LIBATION_REF=master
+ARG LIBATION_REF=7b09a3bfef39c2f6ab28f526b179cb11d3b8360e
+ARG SQLITEPCLRAW_BUNDLE_VERSION=2.1.12
 
-FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0 AS libation-build
+FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0@sha256:72dd743782f2ae7e5476fd64f6a460045e3998dc862218b80e6944cba79a01b0 AS libation-build
 ARG TARGETARCH
 ARG LIBATION_REPO
 ARG LIBATION_REF
+ARG SQLITEPCLRAW_BUNDLE_VERSION
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 --branch "${LIBATION_REF}" "${LIBATION_REPO}" Libation
+RUN git init Libation \
+    && git -C Libation remote add origin "${LIBATION_REPO}" \
+    && git -C Libation fetch --depth 1 origin "${LIBATION_REF}" \
+    && git -C Libation checkout --detach FETCH_HEAD \
+    && test "$(git -C Libation rev-parse HEAD)" = "${LIBATION_REF}"
+
+# Libation v13.7.5 resolves SQLitePCLRaw 2.1.11 transitively. Pin the
+# upstream-compatible patched bundle so the published CLI carries SQLite >=3.50.2.
+RUN dotnet add \
+      /src/Libation/Source/LibationCli/LibationCli.csproj \
+      package SQLitePCLRaw.bundle_e_sqlite3 \
+      --version "${SQLITEPCLRAW_BUNDLE_VERSION}" \
+      --no-restore
 
 RUN case "${TARGETARCH}" in \
       amd64) DOTNET_ARCH=x64 ;; \
@@ -23,7 +37,7 @@ RUN case "${TARGETARCH}" in \
     esac \
     && dotnet publish \
       /src/Libation/Source/LibationCli/LibationCli.csproj \
-      --os linux \
+      --os linux-musl \
       --arch "${DOTNET_ARCH}" \
       --configuration Release \
       --output /out/libation \
@@ -31,7 +45,7 @@ RUN case "${TARGETARCH}" in \
       -p:PublishReadyToRun=true \
       -p:SelfContained=true
 
-FROM node:22-bookworm-slim
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
 
 ARG USER_UID=1001
 ARG USER_GID=1001
@@ -57,13 +71,15 @@ ENV LIBATION_BOOKS_DIR=/data
 ENV PUBLIC_IP_URL=https://api.ipify.org?format=json
 ENV PUBLIC_IP_INTERVAL_SECONDS=300
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl sqlite3 jq libicu72 tini \
-    && groupadd --gid "${USER_GID}" libation \
-    && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /usr/sbin/nologin libation \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates icu-libs sqlite tini \
+    && addgroup -g "${USER_GID}" libation \
+    && adduser -D -u "${USER_UID}" -G libation -s /sbin/nologin libation \
     && mkdir -p /app /libation /config /db /data \
     && chown -R libation:libation /app /libation /config /db /data \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+       /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 WORKDIR /app
 COPY --from=libation-build /out/libation /libation
@@ -73,5 +89,7 @@ COPY public ./public
 
 USER libation
 EXPOSE 3000
-ENTRYPOINT ["/usr/bin/tini", "--"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
+  CMD node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server/index.js"]

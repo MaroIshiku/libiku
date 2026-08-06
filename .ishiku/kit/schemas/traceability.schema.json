@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/traceability.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_from", "requirements"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generated_from": { "const": "appspec.yaml" },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "implementation", "tests", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,11}-[0-9]{3}$" },
+          "implementation": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "tests": {
+            "type": "object",
+            "required": ["unit", "integration", "e2e", "security"],
+            "properties": {
+              "unit": { "type": "array", "items": { "type": "string" } },
+              "integration": { "type": "array", "items": { "type": "string" } },
+              "e2e": { "type": "array", "items": { "type": "string" } },
+              "security": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "status": { "enum": ["planned", "implemented", "verified"] }
+        }
+      }
+    }
+  }
+}

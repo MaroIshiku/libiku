@@ -38,14 +38,28 @@ The first launch uses the shared admin setup with a Docker secret. After that, p
 Create a setup secret first:
 
 ```bash
-mkdir -p /DATA/AppData/libiku/config /DATA/AppData/libiku/db /DATA/AppData/libiku/data secrets
+sudo install -d -m 0750 -o 1001 -g 1001 \
+  /DATA/AppData/libiku/config \
+  /DATA/AppData/libiku/db \
+  /DATA/AppData/libiku/data
+mkdir -p secrets
+umask 077
 printf '%s\n' 'replace-with-a-long-random-secret' > secrets/setup_secret.txt
+```
+
+Libiku runs as UID/GID `1001:1001`. Existing bind-mounted data must be writable by that identity before the hardened container starts:
+
+```bash
+sudo chown -R 1001:1001 \
+  /DATA/AppData/libiku/config \
+  /DATA/AppData/libiku/db \
+  /DATA/AppData/libiku/data
 ```
 
 Run directly without VPN:
 
 ```bash
-docker compose -f compose.yml up -d
+docker compose -f docker-compose.yml up -d
 ```
 
 For custom deployments, `docker-compose.example.yml` can be used as a neutral template.
@@ -133,8 +147,8 @@ The Compose files use these paths by default:
 Pull new images and recreate the stack:
 
 ```bash
-docker compose -f compose.yml pull
-docker compose -f compose.yml up -d
+docker compose -f docker-compose.yml pull
+docker compose -f docker-compose.yml up -d
 ```
 
 Back up the persistent `/config`, `/db`, and `/data` directories before updates. In Gluetun mode, also back up `/gluetun` if its state should be preserved.

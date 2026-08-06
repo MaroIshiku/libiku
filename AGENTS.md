@@ -1,0 +1,3 @@
+# Libiku repository rules
+
+Read `appspec.yaml`, `.ishiku/project.yaml`, decisions, overrides, and applicable local skills before editing. Preserve current behavior, data compatibility, Git history, and rollback. Keep all publishable changes inside this repository and never reference outer `planning/`, `references/`, `source-assets/`, `private/`, or the workspace kit. All UI text is English. The authentication profile in `.ishiku/project.yaml` is binding. Update traceability and run `node .ishiku/kit/scripts/verify-app . --full`. Report only `BLOCKED`, `IMPLEMENTED_BUT_NOT_VERIFIED`, or `VERIFIED` with exact evidence.

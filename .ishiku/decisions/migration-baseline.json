@@ -1,0 +1,10 @@
+{
+  "id": "DEC-001",
+  "date": "2026-08-05",
+  "decision": "Preserve the existing specialist stack through an adapter profile while applying common contracts incrementally.",
+  "rationale": "The standard TypeScript/Fastify/React/SQLite stack is mandatory for new applications; an immediate rewrite would create unnecessary compatibility and data risk.",
+  "consequences": [
+    "Existing runtime remains supported.",
+    "Security and design gaps remain release blockers until tested or covered by a time-bounded override."
+  ]
+}

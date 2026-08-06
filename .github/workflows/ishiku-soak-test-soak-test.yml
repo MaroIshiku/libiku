@@ -1,0 +1,47 @@
+name: ishiku soak test
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_hours:
+        description: Isolated soak duration (48 required for risk C or D)
+        required: true
+        default: '48'
+      health_url:
+        description: Health URL reachable from the runner
+        required: true
+        default: http://127.0.0.1:8080/health/ready
+
+permissions:
+  contents: read
+
+jobs:
+  soak:
+    runs-on: [self-hosted, linux, x64, ishiku-soak]
+    timeout-minutes: 2910
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Start isolated release candidate
+        run: docker compose up --build --detach --wait
+      - name: Monitor health and resources
+        env:
+          SOAK_DURATION_HOURS: ${{ inputs.duration_hours }}
+          SOAK_HEALTH_URL: ${{ inputs.health_url }}
+        run: node .ishiku/kit/scripts/soak-test
+      - name: Capture evidence
+        if: always()
+        run: |
+          mkdir -p .ishiku/reports/soak
+          docker compose ps --all > .ishiku/reports/soak/compose-ps.txt
+          docker compose logs --no-color > .ishiku/reports/soak/compose.log
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes
+      - name: Upload soak evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: soak-${{ github.run_id }}
+          path: .ishiku/reports/soak/
+          retention-days: 90

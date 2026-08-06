@@ -1,0 +1,6 @@
+{
+  "kit_version": "1.0.1",
+  "schema_version": 1,
+  "released": "2026-08-05",
+  "compatibility": { "minimum_node": "24.0.0" }
+}

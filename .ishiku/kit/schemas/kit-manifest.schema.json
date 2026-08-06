@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/kit-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kit_version", "managed", "application_owned", "generated", "allowed_overrides", "local_changes"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kit_version": { "type": "string" },
+    "managed": { "type": "array", "items": { "type": "object", "required": ["path", "sha256"], "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } } },
+    "application_owned": { "type": "array", "items": { "type": "string" } },
+    "generated": { "type": "array", "items": { "type": "string" } },
+    "allowed_overrides": { "type": "array", "items": { "type": "string" } },
+    "local_changes": { "type": "array", "items": { "type": "string" } }
+  }
+}

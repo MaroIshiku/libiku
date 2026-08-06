@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-orchestrator"
+  short_description: "Coordinate end-to-end ishiku delivery workflows"
+  default_prompt: "Use $ishiku-orchestrator to coordinate this ishiku task through analysis, implementation, and verification."
