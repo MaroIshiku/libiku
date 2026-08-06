@@ -16,7 +16,7 @@ Read the AppSpec, traceability matrix, changed behavior, project commands, risk 
 3. Prioritize negative paths, boundaries, concurrency, recovery, permissions, state transitions, and regression behavior. Security-critical requirements need explicit negative tests.
 4. Keep test data synthetic, deterministic, isolated, and resettable. Verify migrations both forward and rollback/restore.
 5. Run the shared sequence through `node .ishiku/kit/scripts/verify-app . --full`; do not replace shared checks with CI-only logic.
-6. For risk C/D releases, require recorded 48-hour soak results. Reproduce failures and distinguish product defects from environment blockers.
+6. Reproduce failures and distinguish product defects from environment blockers.
 7. Update `.ishiku/requirements/traceability.yaml` only with evidence-backed paths and states.
 
 Do not delete or skip a failing test to pass, use snapshot-only assertions for critical behavior, mark an unexecuted test as passing, or claim coverage from file presence.

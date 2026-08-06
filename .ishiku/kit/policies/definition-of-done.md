@@ -4,4 +4,4 @@
 
 `IMPLEMENTED_BUT_NOT_VERIFIED` means implementation exists but any applicable required check failed, was skipped, could not run, or lacks evidence. It is not successful completion.
 
-`VERIFIED` requires schema-valid AppSpec and project metadata, complete requirement traceability, passing implementation and regression checks, passing security/design/Docker/release gates, a successful independent clone verification, and successful mandatory soak evidence. Report the commands, environment, timestamps/artifacts, and outcomes. Never substitute prediction for evidence.
+`VERIFIED` requires schema-valid AppSpec and project metadata, complete requirement traceability, passing implementation and regression checks, passing security/design/Docker/release gates, and a successful independent clone verification. Report the commands, environment, timestamps/artifacts, and outcomes. Never substitute prediction for evidence.

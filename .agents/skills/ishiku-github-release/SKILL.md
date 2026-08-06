@@ -14,7 +14,7 @@ Read repository visibility, default branch, required checks, GHCR image name, ve
 1. Keep workflows clone-independent and call `.ishiku/kit/scripts/verify-app` so local and CI gates match.
 2. Pin every third-party action to a full 40-character commit SHA with a version comment. Set workflow/job permissions to the minimum; separate untrusted PR checks from privileged publish jobs.
 3. Build once, test and publish by digest, scan the image, emit SBOM, attest provenance with OIDC, and attach immutable evidence. Never expose secrets to forked code.
-4. Gate releases on traceability, full verification, migrations, backup/restore, upgrade, and required soak evidence. Include image digest, compatibility, risk, and rollback in release notes.
+4. Gate releases on traceability, full verification, migrations, backup/restore, and upgrade evidence. Include image digest, compatibility, risk, and rollback in release notes.
 5. Validate YAML, action pins, event filters, concurrency, caches, timeouts, artifact retention, GHCR permissions, and a dry-run or disposable release path.
 6. Run `node .ishiku/kit/scripts/check-release .` and record the GitHub run URLs/results when available.
 

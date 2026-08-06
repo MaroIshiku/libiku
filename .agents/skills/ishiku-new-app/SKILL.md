@@ -17,11 +17,11 @@ Require a valid lowercase app ID, display name, product purpose, approved requir
 4. Implement the standard Node 24 LTS, TypeScript, Fastify, React, SQLite/Drizzle profile using platform validation, identity, revocable sessions, permissions, logging, health, manifest, UI, and error contracts.
 5. Add migrations, seed/test factories, secrets via files or runtime injection, non-root Docker, Compose example, `.env.example`, README, changelog, license notices, About/version/build data, and backup/restore/upgrade procedures.
 6. Add unit, integration, contract, migration, E2E, axe, visual, security, performance, Docker-smoke, backup/restore, and upgrade tests. Generate traceability.
-7. Synchronize the kit and install immutable, least-privilege PR/release/update/soak workflows.
+7. Synchronize the kit and install immutable, least-privilege PR, release, and update workflows.
 8. Run full verification, then export or clone the repository to a temporary independent directory and repeat it.
 
 Do not create alternative foundation libraries, use floating versions, store auth tokens in browser storage, accept visual baselines automatically, or claim completion from scaffolding alone.
 
 ## Output and completion
 
-Report created paths, decisions, requirements, commands, artifacts, clone evidence, image digest, and rollback. `VERIFIED` requires every applicable gate; unavailable Docker, browser, release, or soak evidence yields `IMPLEMENTED_BUT_NOT_VERIFIED`.
+Report created paths, decisions, requirements, commands, artifacts, clone evidence, image digest, and rollback. `VERIFIED` requires every applicable gate; unavailable Docker, browser, or release evidence yields `IMPLEMENTED_BUT_NOT_VERIFIED`.

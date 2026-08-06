@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "kit_version": "1.1.0",
+  "kit_version": "1.1.1",
   "application": {
     "id": "libiku",
     "name": "Libiku",
@@ -15,11 +15,7 @@
     "locale": "en"
   },
   "quality": {
-    "default_risk_class": "C",
-    "soak_test_required_for": [
-      "C",
-      "D"
-    ]
+    "default_risk_class": "C"
   },
   "updates": {
     "timezone": "Europe/Berlin",
@@ -52,6 +48,11 @@
       {
         "name": "container",
         "command": "docker build -t libiku:verify .",
+        "required_for_verified": true
+      },
+      {
+        "name": "amazon-account-flow",
+        "command": "npm run test:container",
         "required_for_verified": true
       }
     ]

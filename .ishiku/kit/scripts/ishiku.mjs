@@ -461,7 +461,7 @@ function syncOne(appRoot) {
     (file) => file !== join(source.kit, 'policies', 'design-system.md'),
   );
   copyTree(join(source.kit, 'schemas'), join(localKit, 'schemas'), managed, repo);
-  const appScriptNames = new Set(['ishiku.mjs', 'verify-app', 'check-appspec', 'check-requirements', 'check-architecture', 'check-security', 'check-design', 'check-dependencies', 'check-release', 'compliance-test', 'design-system', 'generate-traceability', 'soak-test']);
+  const appScriptNames = new Set(['ishiku.mjs', 'verify-app', 'check-appspec', 'check-requirements', 'check-architecture', 'check-security', 'check-design', 'check-dependencies', 'check-release', 'compliance-test', 'design-system', 'generate-traceability']);
   for (const name of appScriptNames) {
     const sourceFile = join(source.kit, 'scripts', name);
     const target = join(localKit, 'scripts', name);

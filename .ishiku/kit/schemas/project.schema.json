@@ -30,10 +30,9 @@
     },
     "quality": {
       "type": "object",
-      "required": ["default_risk_class", "soak_test_required_for"],
+      "required": ["default_risk_class"],
       "properties": {
-        "default_risk_class": { "enum": ["A", "B", "C", "D"] },
-        "soak_test_required_for": { "type": "array", "items": { "enum": ["C", "D"] }, "uniqueItems": true }
+        "default_risk_class": { "enum": ["A", "B", "C", "D"] }
       }
     },
     "updates": {

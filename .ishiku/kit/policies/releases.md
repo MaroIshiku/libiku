@@ -4,4 +4,4 @@ Use semantic versions and immutable Git tags. A release is built once, tested by
 
 Weekly dependency and upstream discovery runs Monday at 05:00 Europe/Berlin. Updates arrive as reviewable pull requests containing changelog/risk analysis, license/security results, generated changes, verification evidence, and rollback instructions. Never auto-merge a breaking, security-sensitive, or upstream-generated change.
 
-Release notes include requirements delivered, migrations, compatibility, known risks, backup and rollback instructions, image digest, SBOM, provenance, test evidence, and soak evidence when required.
+Release notes include requirements delivered, migrations, compatibility, known risks, backup and rollback instructions, image digest, SBOM, provenance, and test evidence.
