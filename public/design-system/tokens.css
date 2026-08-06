@@ -26,6 +26,15 @@
   --type-label-large-line: 20px;
   --type-label-medium-size: 12px;
   --type-label-medium-line: 16px;
+  --type-display-large-weight: 700;
+  --type-headline-large-weight: 750;
+  --type-headline-medium-weight: 750;
+  --type-title-large-weight: 750;
+  --type-title-medium-weight: 700;
+  --type-body-large-weight: 400;
+  --type-body-medium-weight: 400;
+  --type-label-large-weight: 700;
+  --type-label-medium-weight: 650;
 
   --space-0: 0px;
   --space-1: 4px;
@@ -61,7 +70,8 @@
   --layout-wide-max-width: 1280px;
 
   --touch-target-min: 44px;
-  --app-header-mobile-min-height: 64px;
+  --field-height-min: 48px;
+  --app-header-mobile-min-height: 72px;
   --app-header-desktop-min-height: 64px;
   --app-shell-mobile-padding: 16px;
   --app-shell-desktop-padding: 24px;
