@@ -38,6 +38,36 @@
       "status": "verified"
     },
     {
+      "id": "ACCOUNT-001",
+      "implementation": [
+        "server/amazon-login.js",
+        "server/index.js",
+        "public/index.html",
+        "public/app.js",
+        "public/styles.css",
+        "Dockerfile"
+      ],
+      "tests": {
+        "unit": [
+          "test/amazon-login.test.js"
+        ],
+        "integration": [
+          "npm run check",
+          "test/amazon-login-container-smoke.mjs",
+          ".ishiku/kit/scripts/check-design",
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [
+          "test/amazon-login-container-smoke.mjs"
+        ],
+        "security": [
+          "test/amazon-login.test.js",
+          ".ishiku/kit/scripts/check-security"
+        ]
+      },
+      "status": "verified"
+    },
+    {
       "id": "UI-001",
       "implementation": [
         "See migration inventory and application source."

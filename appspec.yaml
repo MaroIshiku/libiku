@@ -29,6 +29,17 @@
       "security_critical": true
     },
     {
+      "id": "ACCOUNT-001",
+      "title": "Reliable Amazon account connection",
+      "priority": "critical",
+      "acceptance": [
+        "An admin can choose the Audible marketplace, receive the one-time Amazon sign-in link, and submit the final browser response URL to the same live Libation login session.",
+        "The interface explains where the response URL comes from, survives page refresh while the server session is live, and provides clear success, failure, cancellation, and expiry recovery.",
+        "Amazon credentials are entered only on Amazon; response URLs require a trusted HTTPS Amazon or Audible host and are not persisted, logged, or exposed through process arguments."
+      ],
+      "security_critical": true
+    },
+    {
       "id": "UI-001",
       "title": "Consistent English interface",
       "priority": "high",

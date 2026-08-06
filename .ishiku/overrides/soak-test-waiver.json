@@ -1,0 +1,14 @@
+{
+  "id": "OVR-001",
+  "reason": "The Libiku maintainer explicitly accepted releasing the isolated Amazon account connection change without the otherwise required 48-hour risk-class-C soak period.",
+  "policy": ".ishiku/kit/policies/testing.md risk C/D soak evidence",
+  "security_assessment": "The waiver can miss long-running resource, restart, or timing defects. Exposure is reduced because the flow is time-bounded and in-memory, adds no migration or persistent response URL, retains the pinned Libation upstream, and passed unit, negative-path, hardened-container, accessibility, full verification, and vulnerability checks.",
+  "owner": "Libiku maintainer",
+  "review_date": "2026-08-20",
+  "tests": [
+    "node .ishiku/kit/scripts/verify-app . --full: 398 passed, 0 failed on 2026-08-06",
+    "npm run test:container: 13 Amazon flow checks passed on 2026-08-06",
+    "docker scout cves --only-severity critical,high --exit-code libiku:verify: 0 critical and 0 high findings",
+    "Design 5 browser matrix: 60 theme, mode, and viewport combinations plus dynamic Amazon flow states passed on 2026-08-06"
+  ]
+}

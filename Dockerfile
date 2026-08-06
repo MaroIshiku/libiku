@@ -62,6 +62,7 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV ISHIKU_SETUP_SECRET_FILE=/run/secrets/ishiku_setup_secret
 ENV LIBIKU_AUTH_FILE=/config/LibikuAuth.json
+ENV LIBIKU_AMAZON_LOGIN_TTL_SECONDS=900
 ENV LIBATION_CLI=/libation/LibationCli
 ENV LIBATION_FILES_DIR=/config
 ENV LIBATION_CONFIG_DIR=/config
@@ -72,7 +73,7 @@ ENV PUBLIC_IP_URL=https://api.ipify.org?format=json
 ENV PUBLIC_IP_INTERVAL_SECONDS=300
 
 RUN apk upgrade --no-cache \
-    && apk add --no-cache ca-certificates icu-libs sqlite tini \
+    && apk add --no-cache ca-certificates icu-libs sqlite tini util-linux-misc \
     && addgroup -g "${USER_GID}" libation \
     && adduser -D -u "${USER_UID}" -G libation -s /sbin/nologin libation \
     && mkdir -p /app /libation /config /db /data \

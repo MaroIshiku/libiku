@@ -6,6 +6,14 @@ import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import {
+  amazonLoginSpawnSpec,
+  findAmazonSignInUrl,
+  isSameOriginBrowserRequest,
+  normalizeAmazonLoginInput,
+  sanitizeAmazonLoginLogLine,
+  validateAmazonResponseUrl
+} from "./amazon-login.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -25,6 +33,8 @@ const config = {
   booksDir: process.env.LIBATION_BOOKS_DIR || "/data",
   publicIpUrl: process.env.PUBLIC_IP_URL || "https://api.ipify.org?format=json",
   publicIpIntervalSeconds: Number(process.env.PUBLIC_IP_INTERVAL_SECONDS || 300),
+  terminalScript: process.env.LIBIKU_TERMINAL_SCRIPT || "/usr/bin/script",
+  amazonLoginTtlSeconds: Number(process.env.LIBIKU_AMAZON_LOGIN_TTL_SECONDS || 15 * 60),
   authFile:
     process.env.LIBIKU_AUTH_FILE ||
     path.join(process.env.LIBATION_FILES_DIR || process.env.LIBATION_CONFIG_DIR || "/config", "LibikuAuth.json"),
@@ -36,6 +46,7 @@ const config = {
 const jobs = new Map();
 const sessions = new Map();
 const setupAttempts = new Map();
+const amazonLoginAttempts = new Map();
 const maxLogLines = 1200;
 const scryptAsync = promisify(scrypt);
 let publicIpCache = {
@@ -63,15 +74,36 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function appendLog(job, stream, chunk) {
-  const text = chunk.toString("utf8");
-  for (const line of text.split(/\r?\n/)) {
-    if (!line) continue;
-    job.logs.push({ at: nowIso(), stream, line });
+function appendLogLine(job, stream, line) {
+  if (!line) return;
+  let safeLine = line;
+  if (job.kind === "amazon-login") {
+    const signInUrl = findAmazonSignInUrl(line);
+    if (signInUrl && !job.loginUrl && job.phase === "starting") {
+      job.loginUrl = signInUrl;
+      job.phase = "awaiting-response";
+    }
+    safeLine = sanitizeAmazonLoginLogLine(line);
   }
+  job.logs.push({ at: nowIso(), stream, line: safeLine });
   if (job.logs.length > maxLogLines) {
     job.logs.splice(0, job.logs.length - maxLogLines);
   }
+}
+
+function appendLog(job, stream, chunk) {
+  job.logBuffers ||= {};
+  const text = `${job.logBuffers[stream] || ""}${chunk.toString("utf8")}`;
+  const lines = text.split(/\n/);
+  job.logBuffers[stream] = lines.pop() || "";
+  for (const line of lines) appendLogLine(job, stream, line.replace(/\r$/, ""));
+}
+
+function flushJobLogs(job) {
+  for (const [stream, line] of Object.entries(job.logBuffers || {})) {
+    appendLogLine(job, stream, line.replace(/\r$/, ""));
+  }
+  job.logBuffers = {};
 }
 
 async function ensureDir(dir) {
@@ -326,6 +358,32 @@ function assertSetupRateLimit(req) {
   }
 }
 
+function assertSameOriginRequest(req) {
+  if (isSameOriginBrowserRequest(req.headers)) return;
+  const error = new Error("Cross-site request rejected.");
+  error.status = 403;
+  throw error;
+}
+
+function assertAmazonLoginRateLimit(userId) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const recent = (amazonLoginAttempts.get(userId) || []).filter((at) => at > now - windowMs);
+  if (recent.length >= 5) {
+    const error = new Error("Too many Amazon sign-in attempts. Please try again later.");
+    error.status = 429;
+    throw error;
+  }
+  recent.push(now);
+  amazonLoginAttempts.set(userId, recent);
+}
+
+async function recordAuditEvent(userId, event, result) {
+  const store = await readAuthStore();
+  store.audit = [...store.audit, { at: nowIso(), event, userId, result }].slice(-100);
+  await writeAuthStore(store);
+}
+
 async function getSessionPayload(req) {
   const store = await readAuthStore();
   const secretState = hasAdmin(store) ? { configured: true } : await getSetupSecretState();
@@ -494,31 +552,76 @@ function runProcess(command, args, options = {}) {
   });
 }
 
-function startJob(label, args, stdinText = null) {
+function assertNoConflictingJob() {
   const conflicting = [...jobs.values()].find((job) => job.status === "running" && job.exclusive);
   if (conflicting) {
     const error = new Error(`Another Libation job is already running: ${conflicting.label}`);
     error.status = 409;
     throw error;
   }
+}
 
+function createJobRecord(label, command, args, extra = {}) {
+  assertNoConflictingJob();
   const id = randomUUID();
   const job = {
     id,
     label,
-    command: config.libationCli,
-    args: cliArgs(args),
+    command,
+    args,
     exclusive: true,
     status: "running",
     exitCode: null,
     signal: null,
     startedAt: nowIso(),
     finishedAt: null,
-    logs: []
+    logs: [],
+    logBuffers: {},
+    ...extra
   };
   jobs.set(id, job);
+  return job;
+}
 
-  const child = spawn(config.libationCli, job.args, {
+function attachJobProcess(job, child, { keepStdinOpen = false, stdinText = null } = {}) {
+  job.child = child;
+  job.pid = child.pid;
+  child.stdout.on("data", (chunk) => appendLog(job, "stdout", chunk));
+  child.stderr.on("data", (chunk) => appendLog(job, "stderr", chunk));
+  child.stdin.on("error", () => {
+    // The process may close while a cancellation or timeout is being delivered.
+  });
+  child.on("error", (error) => {
+    job.spawnError = true;
+    appendLogLine(job, "error", error.message);
+  });
+  child.on("close", (code, signal) => {
+    flushJobLogs(job);
+    clearTimeout(job.expiryTimer);
+    job.exitCode = code;
+    job.signal = signal;
+    job.status = job.cancelRequested ? "cancelled" : code === 0 && !job.spawnError ? "succeeded" : "failed";
+    job.finishedAt = nowIso();
+    if (job.kind === "amazon-login") {
+      job.loginUrl = null;
+      if (job.cancelRequested) job.phase = "cancelled";
+      else if (job.timedOut) job.phase = "expired";
+      else job.phase = job.status === "succeeded" ? "completed" : "failed";
+      const result = job.status === "succeeded" ? "success" : job.phase;
+      void recordAuditEvent(job.ownerUserId, "amazon_login_finished", result).catch(() => {});
+    }
+    delete job.child;
+  });
+
+  if (stdinText) child.stdin.end(stdinText);
+  else if (!keepStdinOpen) child.stdin.end();
+  return job;
+}
+
+function startJob(label, args, stdinText = null) {
+  const jobArgs = cliArgs(args);
+  const job = createJobRecord(label, config.libationCli, jobArgs);
+  const child = spawn(config.libationCli, jobArgs, {
     env: {
       ...process.env,
       LIBATION_FILES_DIR: config.libationFilesDir,
@@ -527,26 +630,7 @@ function startJob(label, args, stdinText = null) {
     },
     stdio: ["pipe", "pipe", "pipe"]
   });
-
-  job.pid = child.pid;
-  child.stdout.on("data", (chunk) => appendLog(job, "stdout", chunk));
-  child.stderr.on("data", (chunk) => appendLog(job, "stderr", chunk));
-  child.on("error", (error) => {
-    job.status = "failed";
-    job.finishedAt = nowIso();
-    appendLog(job, "error", Buffer.from(error.message));
-  });
-  child.on("close", (code, signal) => {
-    job.exitCode = code;
-    job.signal = signal;
-    job.status = code === 0 ? "succeeded" : "failed";
-    job.finishedAt = nowIso();
-  });
-
-  if (stdinText) child.stdin.end(stdinText);
-  else child.stdin.end();
-
-  return job;
+  return attachJobProcess(job, child, { stdinText });
 }
 
 async function sqliteJson(dbPath, sql) {
@@ -747,16 +831,21 @@ async function refreshPublicIp() {
   return publicIpCache;
 }
 
-function serializeJob(job, includeLogs = false) {
+function serializeJob(job, includeLogs = false, requestingUserId = null) {
+  const ownsAmazonLogin = job.kind !== "amazon-login" || job.ownerUserId === requestingUserId;
   return {
     id: job.id,
     label: job.label,
+    kind: job.kind,
+    phase: ownsAmazonLogin ? job.phase : undefined,
+    locale: ownsAmazonLogin ? job.locale : undefined,
+    loginUrl: ownsAmazonLogin ? job.loginUrl : undefined,
     status: job.status,
     exitCode: job.exitCode,
     startedAt: job.startedAt,
     finishedAt: job.finishedAt,
     pid: job.pid,
-    logs: includeLogs ? job.logs : undefined
+    logs: includeLogs && ownsAmazonLogin ? job.logs : undefined
   };
 }
 
@@ -796,7 +885,7 @@ async function readJsonBody(req) {
   return raw.trim() ? JSON.parse(raw) : {};
 }
 
-async function getStatusPayload() {
+async function getStatusPayload(requestingUserId = null) {
   const dbPath = findDbPath();
   const version = await getLibationVersion();
   return {
@@ -814,7 +903,9 @@ async function getStatusPayload() {
       booksDir: config.booksDir
     },
     publicIp: publicIpCache,
-    runningJobs: [...jobs.values()].filter((job) => job.status === "running").map((job) => serializeJob(job))
+    runningJobs: [...jobs.values()]
+      .filter((job) => job.status === "running")
+      .map((job) => serializeJob(job, false, requestingUserId))
   };
 }
 
@@ -896,16 +987,102 @@ async function getAccountsPayload() {
   return { accounts, raw: result.stdout, error: result.code === 0 ? null : result.stderr };
 }
 
-function createLoginJob(body) {
-  const { account, locale, responseUrl } = body || {};
-  if (!account || !locale) {
-    const error = new Error("account and locale are required");
+function createLoginJob(body, ownerUserId) {
+  const validation = normalizeAmazonLoginInput(body);
+  if (!validation.valid) {
+    const error = new Error("Amazon account details are invalid.");
     error.status = 400;
+    error.details = validation.errors;
     throw error;
   }
-  const args = ["login-external", "--account", String(account), "--locale", String(locale)];
-  if (responseUrl) args.push("--response-url", String(responseUrl));
-  return startJob(`Login ${account} (${locale})`, args);
+  if (path.isAbsolute(config.terminalScript) && !fssync.existsSync(config.terminalScript)) {
+    const error = new Error("The secure Amazon sign-in helper is unavailable.");
+    error.status = 503;
+    throw error;
+  }
+
+  const { account, locale } = validation.values;
+  const spec = amazonLoginSpawnSpec({
+    terminalScript: config.terminalScript,
+    libationCli: config.libationCli,
+    account,
+    locale,
+    baseEnv: {
+      ...process.env,
+      LIBATION_FILES_DIR: config.libationFilesDir,
+      LIBATION_CONFIG_DIR: config.libationFilesDir,
+      LIBATION_BOOKS_DIR: config.booksDir
+    }
+  });
+  const job = createJobRecord("Connect Amazon account", spec.command, spec.args, {
+    kind: "amazon-login",
+    phase: "starting",
+    locale,
+    ownerUserId,
+    loginUrl: null
+  });
+  const child = spawn(spec.command, spec.args, spec.options);
+  attachJobProcess(job, child, { keepStdinOpen: true });
+
+  const configuredTtl = Number.isFinite(config.amazonLoginTtlSeconds) ? config.amazonLoginTtlSeconds : 15 * 60;
+  const ttlMs = Math.max(60, Math.min(configuredTtl, 30 * 60)) * 1000;
+  job.expiryTimer = setTimeout(() => {
+    if (job.status !== "running" || !job.child) return;
+    job.timedOut = true;
+    job.phase = "expired";
+    job.child.stdin.end();
+    setTimeout(() => {
+      if (job.status === "running" && job.child) job.child.kill("SIGTERM");
+    }, 2000).unref();
+  }, ttlMs);
+  job.expiryTimer.unref();
+  void recordAuditEvent(ownerUserId, "amazon_login_started", "accepted").catch(() => {});
+  return job;
+}
+
+function getOwnedAmazonLoginJob(jobId, ownerUserId) {
+  const job = jobs.get(jobId);
+  if (!job || job.kind !== "amazon-login" || job.ownerUserId !== ownerUserId) {
+    const error = new Error("Amazon sign-in session not found.");
+    error.status = 404;
+    throw error;
+  }
+  return job;
+}
+
+function completeLoginJob(jobId, ownerUserId, body) {
+  const job = getOwnedAmazonLoginJob(jobId, ownerUserId);
+  if (job.status !== "running" || job.phase !== "awaiting-response" || !job.child) {
+    const error = new Error("This Amazon sign-in session is not waiting for a response URL.");
+    error.status = 409;
+    throw error;
+  }
+  const validation = validateAmazonResponseUrl(body?.responseUrl);
+  if (!validation.valid) {
+    const error = new Error(validation.error);
+    error.status = 400;
+    error.details = { responseUrl: validation.error };
+    throw error;
+  }
+
+  job.phase = "verifying";
+  job.loginUrl = null;
+  job.child.stdin.end(`${validation.value}\n`);
+  void recordAuditEvent(ownerUserId, "amazon_login_response_submitted", "accepted").catch(() => {});
+  return job;
+}
+
+function cancelLoginJob(jobId, ownerUserId) {
+  const job = getOwnedAmazonLoginJob(jobId, ownerUserId);
+  if (job.status !== "running" || !job.child) return job;
+  job.cancelRequested = true;
+  job.phase = "cancelling";
+  job.child.stdin.end();
+  setTimeout(() => {
+    if (job.status === "running" && job.child) job.child.kill("SIGTERM");
+  }, 2000).unref();
+  void recordAuditEvent(ownerUserId, "amazon_login_cancelled", "accepted").catch(() => {});
+  return job;
 }
 
 async function createImportJob(body) {
@@ -1007,7 +1184,7 @@ async function handleApi(req, res, url) {
   }
 
   if (method === "GET" && pathname === "/api/status") {
-    return sendJson(res, 200, await getStatusPayload());
+    return sendJson(res, 200, await getStatusPayload(session.user.id));
   }
 
   if (method === "GET" && pathname === "/api/public-ip") {
@@ -1018,7 +1195,7 @@ async function handleApi(req, res, url) {
   if (method === "GET" && pathname === "/api/jobs") {
     const payload = [...jobs.values()]
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-      .map((job) => serializeJob(job));
+      .map((job) => serializeJob(job, false, session.user.id));
     return sendJson(res, 200, payload);
   }
 
@@ -1026,12 +1203,12 @@ async function handleApi(req, res, url) {
   if (method === "GET" && jobMatch) {
     const job = jobs.get(jobMatch[1]);
     if (!job) return sendJson(res, 404, { error: "Job not found" });
-    return sendJson(res, 200, serializeJob(job, true));
+    return sendJson(res, 200, serializeJob(job, true, session.user.id));
   }
 
   if (method === "POST" && pathname === "/api/jobs") {
     const job = await createJobFromBody(await readJsonBody(req));
-    return sendJson(res, 202, serializeJob(job, true));
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
   }
 
   if (method === "GET" && pathname === "/api/accounts") {
@@ -1039,13 +1216,29 @@ async function handleApi(req, res, url) {
   }
 
   if (method === "POST" && pathname === "/api/accounts/login-external") {
-    const job = createLoginJob(await readJsonBody(req));
-    return sendJson(res, 202, serializeJob(job, true));
+    assertSameOriginRequest(req);
+    assertAmazonLoginRateLimit(session.user.id);
+    const job = createLoginJob(await readJsonBody(req), session.user.id);
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
+  }
+
+  const completeLoginMatch = pathname.match(/^\/api\/accounts\/login-external\/([^/]+)\/complete$/);
+  if (method === "POST" && completeLoginMatch) {
+    assertSameOriginRequest(req);
+    const job = completeLoginJob(completeLoginMatch[1], session.user.id, await readJsonBody(req));
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
+  }
+
+  const cancelLoginMatch = pathname.match(/^\/api\/accounts\/login-external\/([^/]+)\/cancel$/);
+  if (method === "POST" && cancelLoginMatch) {
+    assertSameOriginRequest(req);
+    const job = cancelLoginJob(cancelLoginMatch[1], session.user.id);
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
   }
 
   if (method === "POST" && pathname === "/api/accounts/import") {
     const job = await createImportJob(await readJsonBody(req));
-    return sendJson(res, 202, serializeJob(job, true));
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
   }
 
   if (method === "GET" && pathname === "/api/library") {

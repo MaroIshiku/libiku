@@ -18,7 +18,8 @@ The first launch uses the shared admin setup with a Docker secret. After that, p
 - Library view with search, status filter, sorting, and card-based mobile layout.
 - Actions for Refresh, Liberate All, single-title Liberate, Force, PDF, and Status Check.
 - Account list via `LibationCli list-accounts`.
-- External Audible login and `audible-cli` JSON import as background jobs.
+- Guided Amazon/Audible account connection with a one-time browser sign-in link and clear response-URL handoff.
+- `audible-cli` JSON account import as an alternative background job.
 - JSON editors for `Settings.json` and `AccountsSettings.json`.
 - Logs, diagnostics, and technical information in the Settings section.
 - First-run admin setup with setup secret, hashed password, and session cookie.
@@ -94,6 +95,17 @@ Enter the setup secret from `secrets/setup_secret.txt`, a display name, an admin
 
 After successful creation, registration closes. Additional admins cannot be created through the public setup.
 
+### Connect an Amazon Account
+
+Open **Accounts** and choose **Connect Amazon account**:
+
+1. Enter the email address used by the Amazon account and select the Audible marketplace where the audiobooks were purchased.
+2. Select **Start secure sign-in**, then open the one-time Amazon link shown by Libiku. The Amazon password is entered only on Amazon's site.
+3. Complete sign-in and any verification challenge. Amazon then redirects to a final page that may look broken or say it does not exist; this is expected.
+4. Copy the complete URL from that final page's browser address bar, return to Libiku, paste it into **Final browser URL**, and select **Finish connection**.
+
+The final browser URL is the response URL. Libiku sends it only to the still-running Libation login process; it is not placed in process arguments, job logs, or persistent Libiku data. A sign-in session expires after 15 minutes by default, and a fresh flow can be started safely after cancellation, expiry, or restart.
+
 ## Configuration
 
 ### Environment Variables
@@ -104,6 +116,7 @@ After successful creation, registration closes. Additional admins cannot be crea
 | `TZ` | `Europe/Berlin` | Time zone for logs and display |
 | `LIBIKU_AUTH_FILE` | `/config/LibikuAuth.json` | Persistent admin and setup metadata |
 | `LIBIKU_SESSION_TTL_SECONDS` | `604800` | Admin session lifetime |
+| `LIBIKU_AMAZON_LOGIN_TTL_SECONDS` | `900` | Maximum lifetime of an in-progress Amazon browser sign-in |
 | `LIBATION_CLI` | `/libation/LibationCli` | Path to Libation CLI |
 | `LIBATION_FILES_DIR` | `/config` | Libation settings and accounts |
 | `LIBATION_DB_DIR` | `/db` | Search path for Libation databases |
@@ -140,6 +153,7 @@ The Compose files use these paths by default:
 - Public registration is closed after the first admin account.
 - Sessions use HttpOnly cookies with `SameSite=Lax`.
 - Failed setup attempts are rate-limited.
+- Amazon sign-in starts are rate-limited; response URLs are accepted only from same-origin sessions and are never retained in job logs.
 - Health checks at `/healthz` do not expose sensitive data.
 
 ## Updates and Backup
