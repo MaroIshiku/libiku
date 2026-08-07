@@ -15,3 +15,17 @@ logs/
 *.db
 *.db-shm
 *.db-wal
+
+# ishiku workspace boundary
+.env
+.env.*
+!.env.example
+private/
+planning/
+references/
+source-assets/
+*.sqlite
+*.sqlite3
+*.db
+*.bak
+.ishiku/reports/*.json

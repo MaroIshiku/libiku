@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ARG LIBATION_REPO=https://github.com/rmcrackan/Libation.git
-ARG LIBATION_REF=master
+ARG LIBATION_REF=7b09a3bfef39c2f6ab28f526b179cb11d3b8360e
 
 FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0 AS libation-build
 ARG TARGETARCH
@@ -13,7 +13,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 --branch "${LIBATION_REF}" "${LIBATION_REPO}" Libation
+RUN git init Libation \
+    && git -C Libation remote add origin "${LIBATION_REPO}" \
+    && git -C Libation fetch --depth 1 origin "${LIBATION_REF}" \
+    && git -C Libation checkout --detach FETCH_HEAD \
+    && test "$(git -C Libation rev-parse HEAD)" = "${LIBATION_REF}"
 
 RUN case "${TARGETARCH}" in \
       amd64) DOTNET_ARCH=x64 ;; \
@@ -58,11 +62,14 @@ ENV PUBLIC_IP_URL=https://api.ipify.org?format=json
 ENV PUBLIC_IP_INTERVAL_SECONDS=300
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl sqlite3 jq libicu72 tini \
+    && apt-get install -y --no-install-recommends ca-certificates sqlite3 libicu72 tini \
     && groupadd --gid "${USER_GID}" libation \
     && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /usr/sbin/nologin libation \
     && mkdir -p /app /libation /config /db /data \
     && chown -R libation:libation /app /libation /config /db /data \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+       /usr/local/bin/yarn /usr/local/bin/yarnpkg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -73,5 +80,7 @@ COPY public ./public
 
 USER libation
 EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "server/index.js"]

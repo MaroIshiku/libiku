@@ -2,7 +2,7 @@ name: libiku
 
 services:
   libiku:
-    image: ghcr.io/maroishiku/libiku:latest
+    image: ${LIBIKU_IMAGE:-ghcr.io/maroishiku/libiku:0.1.0}
     pull_policy: always
     container_name: libiku
     user: "0:0"
@@ -49,7 +49,7 @@ services:
     cap_add: []
     privileged: false
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/healthz >/dev/null || exit 1"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -63,7 +63,7 @@ services:
       icon: https://raw.githubusercontent.com/MaroIshiku/libiku/main/public/assets/logos/libiku.png
 
   gluetun:
-    image: qmcgaw/gluetun:latest
+    image: ghcr.io/qdm12/gluetun:v3.41.1
     pull_policy: always
     container_name: libikugt
     hostname: libikugt
