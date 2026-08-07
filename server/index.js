@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import { ExclusiveJobQueue } from "./job-queue.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(__dirname, "..");
@@ -33,7 +34,6 @@ const config = {
   sessionTtlSeconds: Number(process.env.LIBIKU_SESSION_TTL_SECONDS || 60 * 60 * 24 * 7)
 };
 
-const jobs = new Map();
 const sessions = new Map();
 const setupAttempts = new Map();
 const maxLogLines = 1200;
@@ -73,6 +73,18 @@ function appendLog(job, stream, chunk) {
     job.logs.splice(0, job.logs.length - maxLogLines);
   }
 }
+
+const jobQueue = new ExclusiveJobQueue({
+  command: config.libationCli,
+  env: () => ({
+    ...process.env,
+    LIBATION_FILES_DIR: config.libationFilesDir,
+    LIBATION_CONFIG_DIR: config.libationFilesDir,
+    LIBATION_BOOKS_DIR: config.booksDir
+  }),
+  appendLog
+});
+const jobs = jobQueue.jobs;
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -494,59 +506,8 @@ function runProcess(command, args, options = {}) {
   });
 }
 
-function startJob(label, args, stdinText = null) {
-  const conflicting = [...jobs.values()].find((job) => job.status === "running" && job.exclusive);
-  if (conflicting) {
-    const error = new Error(`Another Libation job is already running: ${conflicting.label}`);
-    error.status = 409;
-    throw error;
-  }
-
-  const id = randomUUID();
-  const job = {
-    id,
-    label,
-    command: config.libationCli,
-    args: cliArgs(args),
-    exclusive: true,
-    status: "running",
-    exitCode: null,
-    signal: null,
-    startedAt: nowIso(),
-    finishedAt: null,
-    logs: []
-  };
-  jobs.set(id, job);
-
-  const child = spawn(config.libationCli, job.args, {
-    env: {
-      ...process.env,
-      LIBATION_FILES_DIR: config.libationFilesDir,
-      LIBATION_CONFIG_DIR: config.libationFilesDir,
-      LIBATION_BOOKS_DIR: config.booksDir
-    },
-    stdio: ["pipe", "pipe", "pipe"]
-  });
-
-  job.pid = child.pid;
-  child.stdout.on("data", (chunk) => appendLog(job, "stdout", chunk));
-  child.stderr.on("data", (chunk) => appendLog(job, "stderr", chunk));
-  child.on("error", (error) => {
-    job.status = "failed";
-    job.finishedAt = nowIso();
-    appendLog(job, "error", Buffer.from(error.message));
-  });
-  child.on("close", (code, signal) => {
-    job.exitCode = code;
-    job.signal = signal;
-    job.status = code === 0 ? "succeeded" : "failed";
-    job.finishedAt = nowIso();
-  });
-
-  if (stdinText) child.stdin.end(stdinText);
-  else child.stdin.end();
-
-  return job;
+function startJob(label, args, stdinText = null, options = {}) {
+  return jobQueue.start({ label, args: cliArgs(args), stdinText, ...options });
 }
 
 async function sqliteJson(dbPath, sql) {
@@ -752,7 +713,11 @@ function serializeJob(job, includeLogs = false) {
     id: job.id,
     label: job.label,
     status: job.status,
+    action: job.action,
+    asin: job.asin,
+    queuePosition: jobQueue.queuePosition(job.id),
     exitCode: job.exitCode,
+    queuedAt: job.queuedAt,
     startedAt: job.startedAt,
     finishedAt: job.finishedAt,
     pid: job.pid,
@@ -814,7 +779,8 @@ async function getStatusPayload() {
       booksDir: config.booksDir
     },
     publicIp: publicIpCache,
-    runningJobs: [...jobs.values()].filter((job) => job.status === "running").map((job) => serializeJob(job))
+    runningJobs: [...jobs.values()].filter((job) => job.status === "running").map((job) => serializeJob(job)),
+    queuedJobs: jobQueue.queuedJobs().map((job) => serializeJob(job))
   };
 }
 
@@ -848,6 +814,11 @@ async function createJobFromBody(body) {
       args = ["scan"];
       break;
     case "liberate":
+      if (asin && !/^[a-zA-Z0-9._-]{1,64}$/.test(String(asin))) {
+        const error = new Error("ASIN is invalid");
+        error.status = 400;
+        throw error;
+      }
       label = asin ? `Liberate ${asin}` : "Liberate all";
       args = ["liberate"];
       if (pdf) args.push("--pdf");
@@ -873,7 +844,13 @@ async function createJobFromBody(body) {
       }
   }
 
-  return startJob(label, args);
+  const queueableDownload = action === "liberate" && Boolean(asin);
+  return startJob(label, args, null, {
+    action,
+    asin: asin ? String(asin) : null,
+    queueIfBusy: queueableDownload,
+    dedupeKey: queueableDownload ? `liberate:${String(asin)}` : null
+  });
 }
 
 async function getAccountsPayload() {
@@ -1017,7 +994,7 @@ async function handleApi(req, res, url) {
 
   if (method === "GET" && pathname === "/api/jobs") {
     const payload = [...jobs.values()]
-      .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+      .sort((a, b) => b.queuedAt.localeCompare(a.queuedAt))
       .map((job) => serializeJob(job));
     return sendJson(res, 200, payload);
   }

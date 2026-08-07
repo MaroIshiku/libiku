@@ -15,6 +15,7 @@ The first launch uses the shared admin setup with a Docker secret. After that, p
 ## Features
 
 - Dashboard with Libation version, public IP context, active jobs, and job history.
+- FIFO download queue for selecting several individual audiobooks without waiting for each download to finish.
 - Library view with search, status filter, sorting, and card-based mobile layout.
 - Actions for Refresh, Liberate All, single-title Liberate, Force, PDF, and Status Check.
 - Account list via `LibationCli list-accounts`.

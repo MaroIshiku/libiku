@@ -314,9 +314,10 @@ function renderStatus() {
   const status = state.status;
   if (!status) return;
   const activeJobs = status.runningJobs?.length || 0;
-  $("#heroStatus").textContent = `${status.libationVersion || "Libation CLI"} is ready. ${activeJobs} active job${activeJobs === 1 ? "" : "s"}.`;
+  const queuedJobs = status.queuedJobs?.length || 0;
+  $("#heroStatus").textContent = `${status.libationVersion || "Libation CLI"} is ready. ${activeJobs} running, ${queuedJobs} queued.`;
   $("#publicIp").textContent = status.publicIp?.ip || (status.publicIp?.error ? "Error" : "unknown");
-  $("#jobCount").textContent = String(activeJobs);
+  $("#jobCount").textContent = String(activeJobs + queuedJobs);
   renderDiagnostics();
 }
 
@@ -342,7 +343,7 @@ function renderDiagnostics() {
 }
 
 function renderJobs() {
-  const active = state.jobs.filter((job) => job.status === "running");
+  const active = state.jobs.filter((job) => ["running", "queued"].includes(job.status));
   const recent = state.jobs.slice(0, 8);
   $("#activeJobs").innerHTML = active.length ? active.map(jobItem).join("") : "No active jobs";
   $("#activeJobs").classList.toggle("empty-state", active.length === 0);
@@ -353,17 +354,23 @@ function renderJobs() {
     ? state.jobs.map((job) => `<option value="${job.id}">${escapeHtml(job.label)} - ${job.status}</option>`).join("")
     : `<option value="">No jobs</option>`;
   if (selectedId && state.jobs.some((job) => job.id === selectedId)) $("#jobSelector").value = selectedId;
+  renderDownloadQueue();
+  if (state.libraryItems.length) {
+    $("#libraryRows").innerHTML = state.libraryItems.map(libraryCard).join("");
+  }
 }
 
 function jobItem(job) {
   const klass = job.status === "succeeded" ? "ok" : job.status === "failed" ? "error" : "warn";
+  const status = job.status === "queued" && job.queuePosition ? `queued #${job.queuePosition}` : job.status;
+  const start = job.startedAt ? formatDate(job.startedAt) : `Queued ${formatDate(job.queuedAt)}`;
   return `
     <article class="list-card">
       <div class="item-row">
         <strong>${escapeHtml(job.label)}</strong>
-        <span class="status-chip ${klass}">${escapeHtml(job.status)}</span>
+        <span class="status-chip ${klass}">${escapeHtml(status)}</span>
       </div>
-      <small>${formatDate(job.startedAt)}${job.finishedAt ? ` to ${formatDate(job.finishedAt)}` : ""}</small>
+      <small>${start}${job.finishedAt ? ` to ${formatDate(job.finishedAt)}` : ""}</small>
     </article>
   `;
 }
@@ -383,7 +390,7 @@ async function startAction(action, extra = {}) {
     method: "POST",
     body: JSON.stringify({ action, ...extra })
   });
-  toast(`Job started: ${job.label}`);
+  toast(job.status === "queued" ? `Added to queue: ${job.label}` : `Job started: ${job.label}`);
   await Promise.all([loadStatus(), loadJobs()]);
   await focusJob(job.id, false);
 }
@@ -430,6 +437,22 @@ function renderLibrary(result = {}) {
   $("#libraryRows").innerHTML = state.libraryItems.length
     ? state.libraryItems.map(libraryCard).join("")
     : emptyState("No titles found", "Refresh reads the current Libation database.");
+  renderDownloadQueue();
+}
+
+function renderDownloadQueue() {
+  const element = $("#downloadQueue");
+  if (!element) return;
+  const downloads = state.jobs.filter(
+    (job) => job.action === "liberate" && job.asin && ["running", "queued"].includes(job.status)
+  );
+  element.classList.toggle("empty-state", downloads.length === 0);
+  element.innerHTML = downloads.length
+    ? `<strong>Download queue</strong>${downloads.map((job) => {
+      const status = job.status === "queued" ? `Position ${job.queuePosition}` : "Downloading now";
+      return `<span><code>${escapeHtml(job.asin)}</code> · ${escapeHtml(status)}</span>`;
+    }).join("")}`
+    : "Download queue is empty.";
 }
 
 function updateLibraryLoadButton() {
@@ -447,6 +470,15 @@ function updateLibraryLoadButton() {
 
 function libraryCard(item) {
   const [label, klass] = formatStatus(item.bookStatus);
+  const downloadJob = state.jobs.find(
+    (job) => job.asin === item.asin && job.action === "liberate" && ["running", "queued"].includes(job.status)
+  );
+  const liberateLabel = downloadJob?.status === "running"
+    ? "Downloading..."
+    : downloadJob?.status === "queued"
+      ? `Queued #${downloadJob.queuePosition}`
+      : "Liberate";
+  const disabled = downloadJob ? " disabled aria-disabled=\"true\"" : "";
   const subtitle = item.subtitle ? `<p class="book-subtitle">${escapeHtml(item.subtitle)}</p>` : "";
   const meta = [item.contributors, item.series].filter(Boolean).map(escapeHtml).join("<br>");
   return `
@@ -465,9 +497,9 @@ function libraryCard(item) {
         <span>${escapeHtml(formatDate(item.dateAdded) || "-")}</span>
       </div>
       <div class="book-actions">
-        <button class="psu-button psu-button--filled" type="button" data-liberate="${escapeAttr(item.asin || "")}">Liberate</button>
-        <button class="psu-button psu-button--tonal" type="button" data-force="${escapeAttr(item.asin || "")}">Force</button>
-        <button class="psu-button psu-button--outlined" type="button" data-pdf="${escapeAttr(item.asin || "")}">PDF</button>
+        <button class="psu-button psu-button--filled" type="button" data-liberate="${escapeAttr(item.asin || "")}"${disabled}>${liberateLabel}</button>
+        <button class="psu-button psu-button--tonal" type="button" data-force="${escapeAttr(item.asin || "")}"${disabled}>Force</button>
+        <button class="psu-button psu-button--outlined" type="button" data-pdf="${escapeAttr(item.asin || "")}"${disabled}>PDF</button>
         <button class="psu-button psu-button--text" type="button" data-status="${escapeAttr(item.asin || "")}">Status</button>
       </div>
     </article>
