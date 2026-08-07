@@ -28,3 +28,14 @@ source-assets
 *.db
 *.bak
 .ishiku/reports
+
+# Non-runtime repository material
+.agents
+.github
+.ishiku
+AGENTS.md
+appspec.yaml
+README.md
+test
+compose.*.yml
+docker-compose*.yml
