@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/platform.schema.json",
+  "type": "object",
+  "required": ["schema_version", "platform_version", "family", "locale", "new_app_profile", "authentication", "design_system", "updates", "completion_states"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "platform_version": { "type": "string" },
+    "family": { "const": "ishiku" },
+    "locale": { "const": "en" },
+    "new_app_profile": { "type": "object" },
+    "authentication": { "type": "object" },
+    "design_system": {
+      "type": "object",
+      "required": ["id", "version", "contract", "schema", "locale", "full_contract_copies_in_apps"],
+      "properties": {
+        "id": { "const": "ishiku-design-5" },
+        "version": { "type": "string", "pattern": "^5\\.\\d+\\.\\d+$" },
+        "contract": { "const": "design-system/contract.json" },
+        "schema": { "const": "schemas/design-system.schema.json" },
+        "locale": { "const": "en" },
+        "full_contract_copies_in_apps": { "const": false }
+      }
+    },
+    "updates": { "type": "object" },
+    "completion_states": { "const": ["BLOCKED", "IMPLEMENTED_BUT_NOT_VERIFIED", "VERIFIED"] }
+  }
+}

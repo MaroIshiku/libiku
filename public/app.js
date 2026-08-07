@@ -13,6 +13,9 @@ const state = {
   libraryTotal: 0,
   libraryItems: [],
   libraryLoading: false,
+  activeAmazonLoginId: null,
+  amazonLoginLinkOpened: false,
+  amazonLoginReadyAnnounced: false,
   currentView: "dashboard"
 };
 
@@ -358,6 +361,7 @@ function renderJobs() {
   if (state.libraryItems.length) {
     $("#libraryRows").innerHTML = state.libraryItems.map(libraryCard).join("");
   }
+  renderAmazonLogin();
 }
 
 function jobItem(job) {
@@ -381,8 +385,14 @@ async function loadStatus() {
 }
 
 async function loadJobs() {
+  const previousActive = state.jobs.find((job) => job.id === state.activeAmazonLoginId);
   state.jobs = await api("/api/jobs");
   renderJobs();
+  const currentActive = state.jobs.find((job) => job.id === state.activeAmazonLoginId);
+  if (currentActive?.phase === "completed" && previousActive?.phase !== "completed") {
+    await loadAccounts();
+    toast("Amazon account connected");
+  }
 }
 
 async function startAction(action, extra = {}) {
@@ -536,6 +546,116 @@ async function loadAccounts() {
   $("#accountsList").classList.toggle("empty-state", result.accounts.length === 0);
 }
 
+function upsertJob(job) {
+  const index = state.jobs.findIndex((item) => item.id === job.id);
+  if (index === -1) state.jobs.unshift(job);
+  else state.jobs[index] = { ...state.jobs[index], ...job };
+}
+
+function renderAmazonErrors(form, errors = {}) {
+  form.querySelectorAll("[data-amazon-error]").forEach((element) => {
+    element.textContent = "";
+    element.hidden = true;
+  });
+  form.querySelectorAll("[aria-invalid]").forEach((element) => element.setAttribute("aria-invalid", "false"));
+  Object.entries(errors || {}).forEach(([name, message]) => {
+    const field = form.querySelector(`[name="${cssEscape(name)}"]`);
+    const error = form.querySelector(`[data-amazon-error="${cssEscape(name)}"]`);
+    field?.setAttribute("aria-invalid", "true");
+    if (error) {
+      error.textContent = message;
+      error.hidden = false;
+    }
+  });
+}
+
+function setAmazonLoginStep(current, completedAll = false) {
+  const order = ["start", "signin", "return"];
+  const currentIndex = order.indexOf(current);
+  $$('[data-amazon-step]').forEach((element) => {
+    const index = order.indexOf(element.dataset.amazonStep);
+    element.classList.toggle("is-current", !completedAll && index === currentIndex);
+    element.classList.toggle("is-complete", completedAll || (currentIndex > -1 && index < currentIndex));
+  });
+}
+
+function renderAmazonLogin() {
+  const startForm = $("#amazonLoginStartForm");
+  const panel = $("#amazonLoginState");
+  if (!startForm || !panel) return;
+
+  if (!state.activeAmazonLoginId) {
+    const resumable = state.jobs.find((job) => job.kind === "amazon-login" && job.phase && job.status === "running");
+    if (resumable) state.activeAmazonLoginId = resumable.id;
+  }
+  const job = state.jobs.find((item) => item.id === state.activeAmazonLoginId);
+  if (!job) {
+    state.activeAmazonLoginId = null;
+    startForm.hidden = false;
+    panel.hidden = true;
+    return;
+  }
+
+  const link = $("#amazonLoginLink");
+  const completeForm = $("#amazonLoginCompleteForm");
+  const cancelButton = $("#cancelAmazonLoginButton");
+  const resetButton = $("#resetAmazonLoginButton");
+  const status = $("#amazonLoginStatus");
+  startForm.hidden = true;
+  panel.hidden = false;
+  link.hidden = true;
+  completeForm.hidden = true;
+  cancelButton.hidden = job.status !== "running" || ["cancelling", "verifying"].includes(job.phase);
+  resetButton.hidden = job.status === "running";
+  resetButton.textContent = job.phase === "completed" ? "Connect another account" : "Try again";
+
+  if (job.phase === "starting") {
+    setAmazonLoginStep("signin");
+    status.textContent = "Preparing a secure Amazon sign-in link...";
+    return;
+  }
+
+  if (job.phase === "awaiting-response" && job.loginUrl) {
+    setAmazonLoginStep(state.amazonLoginLinkOpened ? "return" : "signin");
+    link.href = job.loginUrl;
+    link.hidden = false;
+    completeForm.hidden = false;
+    status.textContent = state.amazonLoginLinkOpened
+      ? "Finish signing in, then paste the full URL from the final browser address bar below."
+      : "Open Amazon sign-in. After Amazon redirects you, return here with the final browser URL.";
+    if (!state.amazonLoginReadyAnnounced) {
+      state.amazonLoginReadyAnnounced = true;
+      toast("Amazon sign-in is ready");
+    }
+    return;
+  }
+
+  if (job.phase === "verifying") {
+    setAmazonLoginStep("return");
+    status.textContent = "Verifying the Amazon response and saving the account securely...";
+    return;
+  }
+
+  if (job.phase === "cancelling") {
+    setAmazonLoginStep("signin");
+    status.textContent = "Cancelling Amazon sign-in...";
+    return;
+  }
+
+  if (job.phase === "completed") {
+    setAmazonLoginStep(null, true);
+    status.textContent = "Amazon account connected. Reloading the Libation account list...";
+    return;
+  }
+
+  setAmazonLoginStep("signin");
+  status.textContent = job.phase === "expired"
+    ? "This sign-in link expired. Start again to create a fresh link."
+    : job.phase === "cancelled"
+      ? "Amazon sign-in was cancelled."
+      : "Amazon sign-in could not be completed. Start again with a fresh link.";
+}
+
 async function loadSettings() {
   const result = await api("/api/settings");
   $("#settingsEditor").value = JSON.stringify(result.settings, null, 2);
@@ -650,15 +770,77 @@ function wireEvents() {
   libraryObserver.observe($("#librarySentinel"));
 
   $("#loadAccountsButton").addEventListener("click", () => loadAccounts().catch((error) => toast(error.message)));
-  $("#loginForm").addEventListener("submit", async (event) => {
+  $("#amazonLoginStartForm").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const job = await api("/api/accounts/login-external", {
-      method: "POST",
-      body: JSON.stringify(Object.fromEntries(form.entries()))
-    });
-    toast("Login job started");
-    await focusJob(job.id);
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    renderAmazonErrors(form);
+    setFormBusy(form, true);
+    try {
+      const job = await api("/api/accounts/login-external", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      state.activeAmazonLoginId = job.id;
+      state.amazonLoginLinkOpened = false;
+      state.amazonLoginReadyAnnounced = false;
+      upsertJob(job);
+      renderJobs();
+      $("#amazonLoginProgressTitle").focus({ preventScroll: true });
+    } catch (error) {
+      renderAmazonErrors(form, error.details || {});
+      toast(error.message);
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
+  $("#amazonLoginLink").addEventListener("click", () => {
+    state.amazonLoginLinkOpened = true;
+    renderAmazonLogin();
+  });
+  $("#amazonLoginCompleteForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const responseField = form.elements.responseUrl;
+    renderAmazonErrors(form);
+    setFormBusy(form, true);
+    try {
+      const job = await api(`/api/accounts/login-external/${encodeURIComponent(state.activeAmazonLoginId)}/complete`, {
+        method: "POST",
+        body: JSON.stringify({ responseUrl: responseField.value })
+      });
+      responseField.value = "";
+      upsertJob(job);
+      renderJobs();
+      toast("Amazon response submitted securely");
+    } catch (error) {
+      renderAmazonErrors(form, error.details || { responseUrl: error.message });
+      toast(error.message);
+    } finally {
+      setFormBusy(form, false);
+    }
+  });
+  $("#cancelAmazonLoginButton").addEventListener("click", async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+      const job = await api(`/api/accounts/login-external/${encodeURIComponent(state.activeAmazonLoginId)}/cancel`, {
+        method: "POST"
+      });
+      upsertJob(job);
+      renderJobs();
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      event.currentTarget.disabled = false;
+    }
+  });
+  $("#resetAmazonLoginButton").addEventListener("click", () => {
+    state.activeAmazonLoginId = null;
+    state.amazonLoginLinkOpened = false;
+    state.amazonLoginReadyAnnounced = false;
+    $("#amazonLoginStartForm").reset();
+    renderAmazonLogin();
+    $("#amazonLoginStartForm [name='account']").focus();
   });
   $("#importForm").addEventListener("submit", async (event) => {
     event.preventDefault();

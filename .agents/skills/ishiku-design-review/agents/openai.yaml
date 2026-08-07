@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-design-review"
+  short_description: "Review ishiku design-system conformance"
+  default_prompt: "Use $ishiku-design-review to assess this app against the shared ishiku UI and accessibility standard."

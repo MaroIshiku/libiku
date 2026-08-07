@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/design-system.schema.json",
+  "title": "ishiku design system contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "version", "status", "language", "name", "purpose", "authority", "identity", "variation", "profiles", "tokens", "components", "composition", "responsive", "content", "icons", "accessibility", "verification", "distribution"],
+  "properties": {
+    "$schema": {"const": "../schemas/design-system.schema.json"},
+    "schema_version": {"const": 1},
+    "id": {"const": "ishiku-design-5"},
+    "version": {"type": "string", "pattern": "^5\\.\\d+\\.\\d+$"},
+    "status": {"const": "canonical"},
+    "language": {"const": "en"},
+    "name": {"type": "string", "minLength": 2},
+    "purpose": {"type": "string", "minLength": 20},
+    "authority": {"type": "object", "required": ["design", "human_entrypoint", "security", "architecture", "testing", "releases"]},
+    "identity": {"type": "object", "required": ["character", "influences", "avoid"]},
+    "variation": {"type": "object", "required": ["allowed", "requires_override", "forbidden"]},
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["standard-account", "dropiku-totp-vault", "meiku-client-vault"],
+      "properties": {
+        "standard-account": {"$ref": "#/$defs/profile"},
+        "dropiku-totp-vault": {"$ref": "#/$defs/profile"},
+        "meiku-client-vault": {"$ref": "#/$defs/profile"}
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "font", "type_px", "space_px", "radius_px", "motion_ms", "easing", "breakpoint_px", "layout_px", "shadow", "color"],
+      "properties": {
+        "format": {"type": "object"},
+        "font": {"type": "object"},
+        "type_px": {"type": "object", "minProperties": 9},
+        "space_px": {"type": "object", "minProperties": 10, "additionalProperties": {"type": "number", "minimum": 0}},
+        "radius_px": {"type": "object", "required": ["xs", "sm", "md", "lg", "xl", "pill"], "additionalProperties": {"type": "number", "minimum": 0}},
+        "motion_ms": {"type": "object", "required": ["fast", "normal", "slow", "sheet"], "additionalProperties": {"type": "number", "minimum": 0}},
+        "easing": {"type": "object"},
+        "breakpoint_px": {"type": "object", "additionalProperties": false, "required": ["compact", "medium", "expanded", "wide"], "properties": {"compact": {"const": 600}, "medium": {"const": 840}, "expanded": {"const": 1200}, "wide": {"const": 1600}}},
+        "layout_px": {"type": "object", "required": ["mobile_content_max", "desktop_content_max", "wide_content_max", "mobile_gutter", "desktop_gutter", "touch_target_min", "field_height_min", "header_mobile_min", "header_desktop_min"]},
+        "shadow": {"type": "object", "required": ["light", "dark"]},
+        "color": {"$ref": "#/$defs/color"}
+      }
+    },
+    "components": {"type": "object", "minProperties": 20},
+    "composition": {"type": "object", "required": ["page", "header_identity", "settings", "primary_action", "technical_information", "access"]},
+    "responsive": {"type": "object", "required": ["strategy", "compact", "medium", "expanded", "wide", "requirements"]},
+    "content": {"type": "object", "required": ["interface_locale", "style", "standard_labels", "forbidden"], "properties": {"interface_locale": {"const": "en"}}},
+    "icons": {"type": "object", "required": ["source", "default_px", "small_px", "large_px", "rules"]},
+    "accessibility": {"type": "object", "required": ["target", "requirements", "contrast", "motion"], "properties": {"target": {"const": "WCAG 2.2 AA"}}},
+    "verification": {"type": "object", "required": ["viewports", "modes", "themes", "states", "navigation", "automated", "manual", "baseline_rule"]},
+    "distribution": {"type": "object", "required": ["canonical_location", "full_contract_copies_in_apps", "app_repository_contains", "workspace_binding_command", "section_query_command", "standalone_binding_command", "standalone_verification_command", "legacy_pack_names", "rule"], "properties": {"full_contract_copies_in_apps": {"const": false}}}
+  },
+  "$defs": {
+    "profile": {"type": "object", "required": ["apps", "header_control", "access_views", "settings_sections"]},
+    "modePalette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary", "on_primary", "primary_container", "on_primary_container", "secondary", "on_secondary", "secondary_container", "on_secondary_container", "tertiary", "on_tertiary", "tertiary_container", "on_tertiary_container", "background", "on_background", "surface", "surface_soft", "surface_raised", "on_surface", "on_surface_muted", "outline"],
+      "properties": {
+        "primary": {"type": "string"}, "on_primary": {"type": "string"}, "primary_container": {"type": "string"}, "on_primary_container": {"type": "string"},
+        "secondary": {"type": "string"}, "on_secondary": {"type": "string"}, "secondary_container": {"type": "string"}, "on_secondary_container": {"type": "string"},
+        "tertiary": {"type": "string"}, "on_tertiary": {"type": "string"}, "tertiary_container": {"type": "string"}, "on_tertiary_container": {"type": "string"},
+        "background": {"type": "string"}, "on_background": {"type": "string"}, "surface": {"type": "string"}, "surface_soft": {"type": "string"}, "surface_raised": {"type": "string"}, "on_surface": {"type": "string"}, "on_surface_muted": {"type": "string"}, "outline": {"type": "string"}
+      }
+    },
+    "theme": {"type": "object", "additionalProperties": false, "required": ["light", "dark"], "properties": {"light": {"$ref": "#/$defs/modePalette"}, "dark": {"$ref": "#/$defs/modePalette"}}},
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["themes", "modes", "default_theme", "default_mode", "storage_keys", "dom_attributes", "shared_status", "palette"],
+      "properties": {
+        "themes": {"const": ["lavender", "mint", "sky", "amber", "rose", "graphite"]},
+        "modes": {"const": ["system", "light", "dark"]},
+        "default_theme": {"const": "lavender"},
+        "default_mode": {"const": "system"},
+        "storage_keys": {"type": "object"},
+        "dom_attributes": {"type": "array"},
+        "shared_status": {"type": "object", "required": ["light", "dark"]},
+        "palette": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lavender", "mint", "sky", "amber", "rose", "graphite"],
+          "properties": {"lavender": {"$ref": "#/$defs/theme"}, "mint": {"$ref": "#/$defs/theme"}, "sky": {"$ref": "#/$defs/theme"}, "amber": {"$ref": "#/$defs/theme"}, "rose": {"$ref": "#/$defs/theme"}, "graphite": {"$ref": "#/$defs/theme"}}
+        }
+      }
+    }
+  }
+}

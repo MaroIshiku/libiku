@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-project-analysis"
+  short_description: "Inventory an ishiku app or the full workspace"
+  default_prompt: "Use $ishiku-project-analysis to produce an evidence-based inventory before changing this ishiku project."

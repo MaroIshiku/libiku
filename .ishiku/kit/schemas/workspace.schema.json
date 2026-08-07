@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/workspace.schema.json",
+  "title": "ishiku app workspace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "application", "repository", "local_directories"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "name": { "type": "string", "minLength": 2 },
+        "family": { "const": "ishiku" }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": { "path": { "const": "repository" } }
+    },
+    "local_directories": {
+      "type": "array",
+      "uniqueItems": true,
+      "contains": { "const": "private" },
+      "items": { "enum": ["planning", "references", "source-assets", "private"] }
+    }
+  }
+}

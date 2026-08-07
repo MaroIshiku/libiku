@@ -29,3 +29,4 @@ source-assets/
 *.db
 *.bak
 .ishiku/reports/*.json
+!.ishiku/reports/ops-001-verification.json

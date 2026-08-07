@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-github-release"
+  short_description: "Build secure ishiku release automation"
+  default_prompt: "Use $ishiku-github-release to verify GitHub Actions, GHCR publishing, attestations, and release readiness."

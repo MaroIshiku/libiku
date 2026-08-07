@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-security-review"
+  short_description: "Review ishiku application security controls"
+  default_prompt: "Use $ishiku-security-review to assess and verify this app against the ishiku security baseline."

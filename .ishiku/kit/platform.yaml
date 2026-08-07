@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "platform_version": "1.1.1",
+  "family": "ishiku",
+  "locale": "en",
+  "new_app_profile": {
+    "runtime": "node-24-lts",
+    "language": "typescript",
+    "frontend": ["react", "tanstack-router", "react-hook-form", "zod"],
+    "backend": ["fastify", "zod"],
+    "database": ["sqlite", "drizzle"],
+    "testing": ["vitest", "playwright", "axe-core"]
+  },
+  "existing_app_policy": "profile-or-adapter",
+  "authentication": {
+    "default": "revocable-server-session",
+    "password_hash": "argon2id",
+    "single_vault_exceptions": ["dropiku", "meiku"]
+  },
+  "design_system": {
+    "id": "ishiku-design-5",
+    "version": "5.0.0",
+    "contract": "design-system/contract.json",
+    "schema": "schemas/design-system.schema.json",
+    "locale": "en",
+    "full_contract_copies_in_apps": false
+  },
+  "updates": {
+    "timezone": "Europe/Berlin",
+    "weekly": "Monday 05:00"
+  },
+  "completion_states": ["BLOCKED", "IMPLEMENTED_BUT_NOT_VERIFIED", "VERIFIED"]
+}

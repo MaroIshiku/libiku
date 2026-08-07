@@ -1,0 +1,4 @@
+interface:
+  display_name: "ishiku-modernize-app"
+  short_description: "Modernize an existing ishiku application"
+  default_prompt: "Use $ishiku-modernize-app to migrate this app safely toward the current ishiku platform standard."

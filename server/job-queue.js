@@ -2,22 +2,34 @@ import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 
 export class ExclusiveJobQueue {
-  constructor({ command, env, appendLog, createId = randomUUID, now = () => new Date().toISOString(), spawnProcess = spawn }) {
+  constructor({
+    command,
+    env,
+    appendLog,
+    jobs = new Map(),
+    onFinish = () => {},
+    createId = randomUUID,
+    now = () => new Date().toISOString(),
+    spawnProcess = spawn
+  }) {
     this.command = command;
     this.env = env;
     this.appendLog = appendLog;
+    this.onFinish = onFinish;
     this.createId = createId;
     this.now = now;
     this.spawnProcess = spawnProcess;
-    this.jobs = new Map();
+    this.jobs = jobs;
+    this.managedIds = new Set();
     this.pending = [];
     this.activeId = null;
   }
 
   start({ label, args, stdinText = null, queueIfBusy = false, action = null, asin = null, dedupeKey = null }) {
     const active = this.activeJob();
-    if ((active || this.pending.length) && !queueIfBusy) {
-      const conflicting = active || this.pending[0]?.job;
+    const external = this.externalActiveJob();
+    if ((active || external || this.pending.length) && !queueIfBusy) {
+      const conflicting = active || external || this.pending[0]?.job;
       const error = new Error(`Another Libation job is already running: ${conflicting?.label || "queued job"}`);
       error.status = 409;
       throw error;
@@ -50,11 +62,13 @@ export class ExclusiveJobQueue {
       startedAt: null,
       finishedAt: null,
       pid: null,
-      logs: []
+      logs: [],
+      logBuffers: {}
     };
     this.jobs.set(job.id, job);
+    this.managedIds.add(job.id);
 
-    if (this.activeId) this.pending.push({ job, stdinText });
+    if (this.activeId || external) this.pending.push({ job, stdinText });
     else this.launch(job, stdinText);
 
     return job;
@@ -64,6 +78,16 @@ export class ExclusiveJobQueue {
     return this.activeId ? this.jobs.get(this.activeId) || null : null;
   }
 
+  externalActiveJob() {
+    return [...this.jobs.values()].find(
+      (job) => job.status === "running" && !this.managedIds.has(job.id)
+    ) || null;
+  }
+
+  hasBlockingWork() {
+    return Boolean(this.activeJob() || this.externalActiveJob() || this.pending.length);
+  }
+
   queuedJobs() {
     return this.pending.map(({ job }) => job);
   }
@@ -71,6 +95,12 @@ export class ExclusiveJobQueue {
   queuePosition(jobId) {
     const index = this.pending.findIndex(({ job }) => job.id === jobId);
     return index === -1 ? null : index + 1;
+  }
+
+  resume() {
+    if (this.activeId || this.externalActiveJob()) return;
+    const next = this.pending.shift();
+    if (next) this.launch(next.job, next.stdinText);
   }
 
   launch(job, stdinText) {
@@ -120,9 +150,8 @@ export class ExclusiveJobQueue {
     job.status = status;
     job.finishedAt = this.now();
     if (error) this.appendLog(job, "error", Buffer.from(error.message));
+    this.onFinish(job);
     if (this.activeId === job.id) this.activeId = null;
-
-    const next = this.pending.shift();
-    if (next) this.launch(next.job, next.stdinText);
+    this.resume();
   }
 }

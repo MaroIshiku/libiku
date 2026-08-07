@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ishiku.dev/schemas/appspec.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "application", "summary", "requirements"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "family", "locale"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "name": { "type": "string", "minLength": 2 },
+        "family": { "const": "ishiku" },
+        "locale": { "const": "en" }
+      }
+    },
+    "summary": { "type": "string", "minLength": 10 },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "priority", "acceptance", "security_critical"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,11}-[0-9]{3}$" },
+          "title": { "type": "string", "minLength": 3 },
+          "priority": { "enum": ["critical", "high", "medium", "low"] },
+          "acceptance": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 8 } },
+          "security_critical": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

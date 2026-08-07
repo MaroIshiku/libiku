@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "generated_from": "appspec.yaml",
+  "requirements": [
+    {
+      "id": "CORE-001",
+      "implementation": [
+        "server/",
+        "public/"
+      ],
+      "tests": {
+        "unit": [],
+        "integration": [
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/compliance-test"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "AUTH-001",
+      "implementation": [
+        "See migration inventory and application source."
+      ],
+      "tests": {
+        "unit": [],
+        "integration": [
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/compliance-test"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "CORE-002",
+      "implementation": [
+        "server/job-queue.js",
+        "server/index.js",
+        "public/index.html",
+        "public/app.js",
+        "public/styles.css"
+      ],
+      "tests": {
+        "unit": [
+          "test/job-queue.test.js"
+        ],
+        "integration": [
+          "npm run check",
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/check-security"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "ACCOUNT-001",
+      "implementation": [
+        "server/amazon-login.js",
+        "server/index.js",
+        "public/index.html",
+        "public/app.js",
+        "public/styles.css",
+        "Dockerfile"
+      ],
+      "tests": {
+        "unit": [
+          "test/amazon-login.test.js"
+        ],
+        "integration": [
+          "npm run check",
+          "test/amazon-login-container-smoke.mjs",
+          ".ishiku/kit/scripts/check-design",
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [
+          "test/amazon-login-container-smoke.mjs"
+        ],
+        "security": [
+          "test/amazon-login.test.js",
+          ".ishiku/kit/scripts/check-security"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "UI-001",
+      "implementation": [
+        "See migration inventory and application source."
+      ],
+      "tests": {
+        "unit": [],
+        "integration": [
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/compliance-test"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "OPS-001",
+      "implementation": [
+        "See migration inventory and application source."
+      ],
+      "tests": {
+        "unit": [],
+        "integration": [
+          ".ishiku/reports/ops-001-verification.json",
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/compliance-test"
+        ]
+      },
+      "status": "verified"
+    },
+    {
+      "id": "REL-001",
+      "implementation": [
+        ".github/workflows/ishiku-pull-request-verify.yml",
+        ".github/workflows/ishiku-release-release.yml",
+        ".ishiku/kit/scripts/check-release"
+      ],
+      "tests": {
+        "unit": [],
+        "integration": [
+          ".ishiku/kit/scripts/compliance-test"
+        ],
+        "e2e": [],
+        "security": [
+          ".ishiku/kit/scripts/compliance-test"
+        ]
+      },
+      "status": "verified"
+    }
+  ]
+}

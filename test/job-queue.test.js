@@ -15,10 +15,12 @@ class FakeChild extends EventEmitter {
 
 function fixture() {
   const children = [];
+  const jobs = new Map();
   let id = 0;
   let tick = 0;
   const queue = new ExclusiveJobQueue({
     command: "LibationCli",
+    jobs,
     env: () => ({ TEST: "1" }),
     appendLog(job, stream, chunk) {
       job.logs.push({ stream, line: chunk.toString("utf8") });
@@ -31,7 +33,7 @@ function fixture() {
       return child;
     }
   });
-  return { queue, children };
+  return { queue, children, jobs };
 }
 
 function audiobook(asin) {
@@ -96,4 +98,20 @@ test("advances the queue after a process error and ignores a later close", () =>
   assert.match(first.logs[0].line, /spawn failed/);
   assert.equal(second.status, "running");
   assert.equal(children.length, 2);
+});
+
+test("waits for an external login job before starting queued downloads", () => {
+  const { queue, children, jobs } = fixture();
+  jobs.set("amazon-login", { id: "amazon-login", status: "running" });
+
+  const download = queue.start(audiobook("B000000001"));
+
+  assert.equal(download.status, "queued");
+  assert.equal(children.length, 0);
+
+  jobs.get("amazon-login").status = "succeeded";
+  queue.resume();
+
+  assert.equal(download.status, "running");
+  assert.equal(children.length, 1);
 });

@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+const repo = resolve(process.argv[2] ?? '.');
+const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
+const project = readJson(join(repo, '.ishiku', 'project.yaml'));
+const spec = readJson(join(repo, 'appspec.yaml'));
+assert.equal(project.platform.locale, 'en');
+assert.equal(spec.application.locale, 'en');
+const expectedAuth = project.application.id === 'dropiku' ? 'dropiku-totp-vault' : project.application.id === 'meiku' ? 'meiku-client-vault' : 'standard-account';
+assert.equal(project.platform.authentication, expectedAuth);
+assert.ok(spec.requirements.length > 0);
+assert.equal(new Set(spec.requirements.map((item) => item.id)).size, spec.requirements.length);
+
+const workflowRoot = join(repo, '.github', 'workflows');
+for (const name of readdirSync(workflowRoot).filter((name) => /\.ya?ml$/i.test(name))) {
+  const body = readFileSync(join(workflowRoot, name), 'utf8');
+  for (const match of body.matchAll(/uses:\s*([^\s#]+)@([^\s#]+)/g)) {
+    if (!match[1].startsWith('./') && !match[1].startsWith('docker://')) assert.match(match[2], /^[a-f0-9]{40}$/);
+  }
+  assert.match(body, /permissions:/);
+  assert.doesNotMatch(body, /(?:\.\.\/)+(?:\.ishiku|planning|private)/);
+}
+
+for (const name of ['Dockerfile', 'docker-compose.yml', 'docker-compose.example.yml', 'compose.yaml']) {
+  const file = join(repo, name);
+  if (!existsSync(file)) continue;
+  const body = readFileSync(file, 'utf8');
+  assert.doesNotMatch(body, /(?:adminadmin|CHANGE-ME-seediku|192\.168\.1\.110)/i);
+  assert.doesNotMatch(body, /image:\s*[^\s]+:latest(?:\s|$)/i);
+  assert.doesNotMatch(body, /[A-Za-z]:\\Users\\/i);
+}
+
+process.stdout.write(`ishiku compliance checks passed for ${project.application.id}.\n`);

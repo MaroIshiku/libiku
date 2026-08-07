@@ -162,23 +162,59 @@
               </div>
               <div id="accountsList" class="app-list empty-state">No accounts loaded</div>
             </article>
-            <article class="psu-card psu-col-6">
-              <h2>External login</h2>
-              <form id="loginForm" class="form-stack">
+            <article class="psu-card psu-col-6" aria-labelledby="amazonLoginTitle">
+              <h2 id="amazonLoginTitle">Connect Amazon account</h2>
+              <p class="psu-card-text amazon-login-intro">Libiku opens Amazon's secure sign-in in your browser. Your password is never entered in Libiku.</p>
+              <form id="amazonLoginStartForm" class="form-stack amazon-login-form">
                 <label class="psu-field">
-                  <span class="psu-label">Account</span>
-                  <input class="psu-input" name="account" type="email" required placeholder="you@example.com" />
+                  <span class="psu-label">Amazon account email</span>
+                  <input class="psu-input" name="account" type="email" autocomplete="email" required maxlength="320" placeholder="you@example.com" aria-invalid="false" aria-describedby="amazonAccountError" />
+                  <span id="amazonAccountError" class="psu-field-error" data-amazon-error="account" hidden></span>
                 </label>
                 <label class="psu-field">
-                  <span class="psu-label">Locale</span>
-                  <input class="psu-input" name="locale" required placeholder="de" />
+                  <span class="psu-label">Audible marketplace</span>
+                  <select class="psu-input" name="locale" required aria-invalid="false" aria-describedby="amazonLocaleHelp amazonLocaleError">
+                    <option value="">Choose your marketplace</option>
+                    <option value="de">Germany (audible.de)</option>
+                    <option value="us">United States (audible.com)</option>
+                    <option value="uk">United Kingdom (audible.co.uk)</option>
+                    <option value="au">Australia (audible.com.au)</option>
+                    <option value="br">Brazil (audible.com.br)</option>
+                    <option value="ca">Canada (audible.ca)</option>
+                    <option value="es">Spain (audible.es)</option>
+                    <option value="fr">France (audible.fr)</option>
+                    <option value="in">India (audible.in)</option>
+                    <option value="it">Italy (audible.it)</option>
+                    <option value="jp">Japan (audible.co.jp)</option>
+                  </select>
+                  <span id="amazonLocaleHelp" class="field-hint">Choose the store where this account owns its audiobooks.</span>
+                  <span id="amazonLocaleError" class="psu-field-error" data-amazon-error="locale" hidden></span>
                 </label>
-                <label class="psu-field">
-                  <span class="psu-label">Response URL</span>
-                  <textarea class="psu-input" name="responseUrl" rows="4" placeholder="Optional: paste the Audible login response URL here"></textarea>
-                </label>
-                <button class="psu-button psu-button--filled" type="submit">Start login job</button>
+                <button class="psu-button psu-button--filled" type="submit">Start secure sign-in</button>
               </form>
+              <section id="amazonLoginState" class="amazon-login-state" aria-labelledby="amazonLoginProgressTitle" hidden>
+                <h3 id="amazonLoginProgressTitle" tabindex="-1">Amazon sign-in</h3>
+                <ol class="amazon-login-steps" aria-label="Amazon connection progress">
+                  <li data-amazon-step="start"><span>1</span> Start</li>
+                  <li data-amazon-step="signin"><span>2</span> Sign in</li>
+                  <li data-amazon-step="return"><span>3</span> Return URL</li>
+                </ol>
+                <p id="amazonLoginStatus" class="psu-card-text" role="status" aria-live="polite"></p>
+                <a id="amazonLoginLink" class="psu-button psu-button--filled psu-button--full" href="#" target="_blank" rel="noopener noreferrer" hidden>Open Amazon sign-in</a>
+                <form id="amazonLoginCompleteForm" class="form-stack" hidden>
+                  <label class="psu-field">
+                    <span class="psu-label">Final browser URL</span>
+                    <textarea class="psu-input amazon-response-url" name="responseUrl" rows="4" required maxlength="16384" autocomplete="off" spellcheck="false" aria-invalid="false" aria-describedby="amazonResponseHelp amazonResponseError" placeholder="https://www.amazon.../ap/maplanding?..."></textarea>
+                    <span id="amazonResponseHelp" class="field-hint">After signing in, copy the entire URL from the browser address bar. It is normal if the final page looks broken or says it does not exist.</span>
+                    <span id="amazonResponseError" class="psu-field-error" data-amazon-error="responseUrl" hidden></span>
+                  </label>
+                  <button class="psu-button psu-button--tonal" type="submit">Finish connection</button>
+                </form>
+                <div class="amazon-login-actions">
+                  <button id="cancelAmazonLoginButton" class="psu-button psu-button--text" type="button">Cancel</button>
+                  <button id="resetAmazonLoginButton" class="psu-button psu-button--outlined" type="button" hidden>Connect another account</button>
+                </div>
+              </section>
             </article>
             <article class="psu-card psu-col-12">
               <h2>Account import</h2>

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kit_version": "1.1.1",
+  "application": {
+    "id": "libiku",
+    "name": "Libiku",
+    "family": "ishiku",
+    "type": "web_application"
+  },
+  "platform": {
+    "profile": "node-libation-adapter",
+    "authentication": "standard-account",
+    "design_system": "ishiku-design-5",
+    "security_baseline": "level-2",
+    "locale": "en"
+  },
+  "quality": {
+    "default_risk_class": "C"
+  },
+  "updates": {
+    "timezone": "Europe/Berlin",
+    "weekly_schedule": {
+      "day": "monday",
+      "time": "05:00"
+    }
+  },
+  "repository": {
+    "default_branch": "main",
+    "container_registry": "ghcr.io"
+  },
+  "verification": {
+    "commands": [
+      {
+        "name": "ishiku-compliance",
+        "command": "node .ishiku/kit/scripts/compliance-test .",
+        "required_for_verified": true
+      },
+      {
+        "name": "application",
+        "command": "npm run check",
+        "required_for_verified": true
+      },
+      {
+        "name": "compose",
+        "command": "docker compose -f docker-compose.example.yml config --quiet",
+        "required_for_verified": true
+      },
+      {
+        "name": "container",
+        "command": "docker build -t libiku:verify .",
+        "required_for_verified": true
+      },
+      {
+        "name": "amazon-account-flow",
+        "command": "npm run test:container",
+        "required_for_verified": true
+      }
+    ]
+  },
+  "upstreams": [
+    {
+      "id": "libation",
+      "source": "https://github.com/rmcrackan/Libation",
+      "strategy": "generated"
+    },
+    {
+      "id": "sqlitepclraw",
+      "source": "https://github.com/ericsink/SQLitePCL.raw",
+      "strategy": "dependency"
+    }
+  ]
+}
