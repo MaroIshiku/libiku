@@ -2,7 +2,7 @@ name: libiku
 
 services:
   libiku:
-    image: ${LIBIKU_IMAGE:-ghcr.io/maroishiku/libiku:0.1.0}
+    image: ${LIBIKU_IMAGE:-ghcr.io/maroishiku/libiku:v0.2.6}
     pull_policy: always
     container_name: libiku
     hostname: libiku

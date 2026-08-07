@@ -1,6 +1,6 @@
 {
   "name": "libiku",
-  "version": "0.1.0",
+  "version": "0.2.6",
   "private": true,
   "description": "Docker-first Libation Web GUI in the Pixel Soft Utility design system.",
   "type": "module",
