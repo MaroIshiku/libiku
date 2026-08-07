@@ -184,7 +184,7 @@
 .psu-label { color: var(--color-on-surface-muted); font-size: var(--type-label-medium-size); line-height: var(--type-label-medium-line); font-weight: 700; letter-spacing: 0.04em; }
 .psu-input,
 .psu-search-field {
-  min-block-size: 48px;
+  min-block-size: var(--field-height-min);
   inline-size: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-outline);
@@ -225,7 +225,7 @@
   gap: var(--space-1);
 }
 .psu-segmented-control button {
-  min-block-size: 36px;
+  min-block-size: var(--touch-target-min);
   padding-inline: var(--space-4);
   border: 0;
   border-radius: var(--radius-pill);
@@ -365,7 +365,7 @@
 }
 .psu-setup-logo img { inline-size: 100%; block-size: 100%; object-fit: contain; padding: 10px; }
 .psu-setup-logo svg { inline-size: 36px; block-size: 36px; }
-.psu-setup-title { margin: 0; font-size: var(--type-headline-medium-size); line-height: var(--type-headline-medium-line); font-weight: 800; }
+.psu-setup-title { margin: 0; font-size: var(--type-headline-medium-size); line-height: var(--type-headline-medium-line); font-weight: var(--type-headline-medium-weight); }
 .psu-setup-subtitle { margin: 0; color: var(--color-on-surface-muted); font-size: var(--type-body-medium-size); line-height: var(--type-body-medium-line); }
 .psu-form-stack { display: grid; gap: var(--space-4); }
 .psu-password-requirements {

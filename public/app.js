@@ -233,11 +233,11 @@ function registerTemplate() {
       <section class="psu-register-window" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
         ${setupBrand()}
         <form id="setupForm" class="psu-form-stack" data-app-id="libiku" data-app-name="Libiku">
-          <h2 id="setupTitle" class="center-title">Create admin account</h2>
-          ${fieldTemplate("setup_secret", "Setup-Secret", "password", "one-time-code")}
+          <h2 id="setupTitle" class="center-title">Set up admin</h2>
+          ${fieldTemplate("setup_secret", "Setup secret", "password", "one-time-code")}
           ${fieldTemplate("admin_display_name", "Display name", "text", "name")}
           ${fieldTemplate("admin_username", "Admin username", "text", "username")}
-          ${fieldTemplate("admin_email", "Email optional", "email", "email", false)}
+          ${fieldTemplate("admin_email", "Email (optional)", "email", "email", false)}
           ${fieldTemplate("admin_password", "Admin password", "password", "new-password")}
           ${fieldTemplate("admin_password_confirm", "Repeat password", "password", "new-password")}
           <div class="psu-password-requirements">
@@ -701,7 +701,7 @@ async function focusJob(id, switchToSettings = true) {
 }
 
 function renderThemeControls() {
-  const theme = document.documentElement.dataset.theme || state.manifest.default_theme || "mint";
+  const theme = document.documentElement.dataset.theme || state.manifest.default_theme || "lavender";
   const mode = document.documentElement.dataset.mode || state.manifest.default_mode || "system";
   $$("[data-theme-picker]").forEach((container) => {
     container.innerHTML = Object.entries(themeLabels).map(([value, label]) => `
