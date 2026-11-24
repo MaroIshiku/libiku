@@ -94,6 +94,22 @@
       "status": "verified"
     },
     {
+      "id": "COMMAND-001",
+      "implementation": [
+        "server/libation-command.js",
+        "server/index.js",
+        "public/index.html",
+        "public/app.js"
+      ],
+      "tests": {
+        "unit": ["test/libation-command.test.js"],
+        "integration": ["test/amazon-login-container-smoke.mjs"],
+        "e2e": [],
+        "security": ["test/libation-command.test.js", "test/amazon-login-container-smoke.mjs"]
+      },
+      "status": "verified"
+    },
+    {
       "id": "UI-001",
       "implementation": [
         "See migration inventory and application source."

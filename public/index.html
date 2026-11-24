@@ -66,6 +66,7 @@
               </button>
               <button class="psu-button psu-button--outlined" type="button" data-action="set-status">Status Check</button>
               <button class="psu-button psu-button--outlined" type="button" data-action="convert">Convert</button>
+              <button id="openCommandWindow" class="psu-button psu-button--tonal" type="button" aria-haspopup="dialog">Command window</button>
             </div>
           </article>
 
@@ -277,6 +278,36 @@
             </article>
           </div>
         </section>
+        <dialog id="commandWindow" class="psu-card command-window" aria-labelledby="commandWindowTitle">
+          <div class="section-heading wrap">
+            <h2 id="commandWindowTitle">Libation command window</h2>
+            <form method="dialog">
+              <button class="psu-button psu-button--tonal" type="submit">Close</button>
+            </form>
+          </div>
+          <form id="commandForm" class="form-stack">
+            <label class="field">
+              <span class="psu-label">Command</span>
+              <input class="psu-input" name="command" maxlength="512" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="liberate ASIN" required autofocus />
+            </label>
+            <div class="button-row">
+              <button class="psu-button psu-button--filled" type="submit">Run command</button>
+            </div>
+          </form>
+          <details>
+            <summary>Supported commands</summary>
+            <ul>
+              <li><code>help</code> and <code>version</code></li>
+              <li><code>list-accounts [--bare]</code></li>
+              <li><code>scan</code>, <code>set-status</code>, and <code>convert</code></li>
+              <li><code>liberate [--force] [--pdf] [ASIN]</code></li>
+              <li><code>login-external --account EMAIL --locale REGION</code> opens the guided Amazon sign-in.</li>
+            </ul>
+          </details>
+          <p id="commandError" class="psu-field-error" role="alert"></p>
+          <p id="commandStatus" role="status"></p>
+          <pre id="commandLogs" class="logs" tabindex="0" aria-label="Command output">No command output yet</pre>
+        </dialog>
       </main>
 
       <nav class="psu-bottom-nav app-bottom-nav" aria-label="Primary sections" style="--psu-nav-count: 4">

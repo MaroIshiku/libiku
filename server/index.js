@@ -7,6 +7,7 @@ import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "no
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { ExclusiveJobQueue } from "./job-queue.js";
+import { parseLibationCommand } from "./libation-command.js";
 import {
   amazonLoginSpawnSpec,
   findAmazonSignInUrl,
@@ -1231,6 +1232,24 @@ async function handleApi(req, res, url) {
 
   if (method === "POST" && pathname === "/api/jobs") {
     const job = await createJobFromBody(await readJsonBody(req));
+    return sendJson(res, 202, serializeJob(job, true, session.user.id));
+  }
+
+  if (method === "POST" && pathname === "/api/commands") {
+    if (publicUser(session.user).role !== "admin") return sendJson(res, 403, { error: "Administrator access required." });
+    assertSameOriginRequest(req);
+    const command = parseLibationCommand((await readJsonBody(req))?.command);
+    if (!command) return sendJson(res, 400, { error: "Enter a supported Libation command and check its arguments." });
+
+    let job;
+    if (command.login) {
+      assertAmazonLoginRateLimit(session.user.id);
+      job = createLoginJob(command.login, session.user.id);
+    } else if (command.action) {
+      job = await createJobFromBody(command);
+    } else {
+      job = startJob(command.args.join(" "), command.args);
+    }
     return sendJson(res, 202, serializeJob(job, true, session.user.id));
   }
 

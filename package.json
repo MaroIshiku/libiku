@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node --test test/job-queue.test.js test/amazon-login.test.js",
+    "test": "node --test test/job-queue.test.js test/amazon-login.test.js test/libation-command.test.js",
     "test:container": "node test/amazon-login-container-smoke.mjs",
     "check": "node --check server/index.js && node --check server/job-queue.js && node --check server/amazon-login.js && node --check public/app.js && node --check public/design-system/app-shell.js && node --check public/design-system/theme-controller.js && node --check public/design-system/setup-flow.js && npm test"
   },

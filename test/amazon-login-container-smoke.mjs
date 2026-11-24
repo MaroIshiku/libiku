@@ -11,8 +11,8 @@ const smokeRoot = await mkdtemp(path.join(os.tmpdir(), "libiku-amazon-smoke-"));
 const configDir = path.join(smokeRoot, "config");
 const dbDir = path.join(smokeRoot, "db");
 const dataDir = path.join(smokeRoot, "data");
-const secretFile = path.join(smokeRoot, "setup-secret.txt");
-const fakeCliFile = path.join(smokeRoot, "fake-libation");
+const secretFile = path.join(configDir, "setup-secret.txt");
+const fakeCliFile = path.join(configDir, "fake-libation");
 const setupSecret = "synthetic-container-smoke-secret-2026";
 const adminPassword = "Synthetic-Container-Smoke-Password-2026";
 const responseMarker = "synthetic-container-response";
@@ -84,10 +84,8 @@ try {
     "-p", "127.0.0.1::3000",
     "-e", "NODE_ENV=production",
     "-e", "PUBLIC_IP_URL=http://127.0.0.1:9",
-    "-e", "ISHIKU_SETUP_SECRET_FILE=/run/secrets/ishiku_setup_secret",
-    "-e", "LIBATION_CLI=/fake/LibationCli",
-    "--mount", "type=bind,source=" + secretFile + ",target=/run/secrets/ishiku_setup_secret,readonly",
-    "--mount", "type=bind,source=" + fakeCliFile + ",target=/fake/LibationCli,readonly",
+    "-e", "ISHIKU_SETUP_SECRET_FILE=/config/setup-secret.txt",
+    "-e", "LIBATION_CLI=/config/fake-libation",
     "--mount", "type=bind,source=" + configDir + ",target=/config",
     "--mount", "type=bind,source=" + dbDir + ",target=/db",
     "--mount", "type=bind,source=" + dataDir + ",target=/data",
@@ -119,6 +117,32 @@ try {
   const cookie = setup.headers.get("set-cookie")?.split(";", 1)[0];
   assert.ok(cookie, "setup returns an authenticated session cookie");
   const sameOrigin = { Origin: baseUrl, "Sec-Fetch-Site": "same-origin" };
+
+  const commandRequest = (command, options = {}) => request(baseUrl, "/api/commands", {
+    cookie, headers: sameOrigin, method: "POST", body: { command }, ...options
+  });
+  assert.equal((await commandRequest("list-accounts", { cookie: undefined })).status, 401);
+  assert.equal((await commandRequest("scan", {
+    headers: { Origin: "https://example.invalid", "Sec-Fetch-Site": "cross-site" }
+  })).status, 403);
+  assert.equal((await commandRequest("scan --override Books=/tmp")).status, 400);
+  const listed = await commandRequest("list-accounts");
+  assert.equal(listed.status, 202);
+  const listedJob = await waitFor(async () => {
+    const result = await request(baseUrl, "/api/jobs/" + listed.body.id, { cookie });
+    return result.body.status === "succeeded" ? result.body : null;
+  });
+  assert.match(listedJob.logs.map((entry) => entry.line).join("\n"), /No accounts configured/);
+
+  const download = await commandRequest("liberate B000TEST01 --force");
+  assert.equal(download.status, 202);
+  assert.equal(download.body.action, "liberate");
+  assert.equal(download.body.asin, "B000TEST01");
+  const downloadedJob = await waitFor(async () => {
+    const result = await request(baseUrl, "/api/jobs/" + download.body.id, { cookie });
+    return result.body.status === "succeeded" ? result.body : null;
+  });
+  assert.match(downloadedJob.logs.map((entry) => entry.line).join("\n"), /Synthetic CLI arguments: liberate --force B000TEST01/);
 
   const started = await request(baseUrl, "/api/accounts/login-external", {
     cookie,
@@ -179,10 +203,17 @@ try {
   assert.equal(accounts.body.accounts.length, 1);
   assert.equal(accounts.body.accounts[0].authenticated, true);
 
+  const commandLogin = await commandRequest("login-external --account test@example.invalid --locale de");
+  assert.equal(commandLogin.status, 202);
+  assert.equal(commandLogin.body.kind, "amazon-login");
+  assert.equal((await request(baseUrl, "/api/accounts/login-external/" + commandLogin.body.id + "/cancel", {
+    cookie, headers: sameOrigin, method: "POST"
+  })).status, 202);
+
   console.log(JSON.stringify({
     status: "passed",
     image,
-    checks: 13,
+    command_window: "passed",
     response_url_in_process_args: false,
     response_url_in_logs: false,
     response_url_persisted: false

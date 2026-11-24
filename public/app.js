@@ -8,6 +8,7 @@ const state = {
   status: null,
   jobs: [],
   selectedJob: null,
+  commandJob: null,
   libraryOffset: 0,
   libraryLimit: 80,
   libraryTotal: 0,
@@ -101,6 +102,7 @@ function renderAuthGate() {
     authRoot.innerHTML = "";
     authRoot.hidden = true;
     appRoot.hidden = false;
+    $("#openCommandWindow").hidden = session.user?.role !== "admin";
     const displayName = session.user?.displayName || session.user?.username || "Admin";
     $("#signedInUser").textContent = displayName;
     $("#settingsAccountName").textContent = displayName;
@@ -110,6 +112,11 @@ function renderAuthGate() {
     return;
   }
 
+  $("#commandWindow").close();
+  $("#commandForm").reset();
+  $("#commandError").textContent = "";
+  state.commandJob = null;
+  renderCommandJob(null);
   appRoot.hidden = true;
   authRoot.hidden = false;
 
@@ -552,6 +559,15 @@ function upsertJob(job) {
   else state.jobs[index] = { ...state.jobs[index], ...job };
 }
 
+function showAmazonLoginJob(job) {
+  state.activeAmazonLoginId = job.id;
+  state.amazonLoginLinkOpened = false;
+  state.amazonLoginReadyAnnounced = false;
+  upsertJob(job);
+  renderJobs();
+  $("#amazonLoginProgressTitle").focus({ preventScroll: true });
+}
+
 function renderAmazonErrors(form, errors = {}) {
   form.querySelectorAll("[data-amazon-error]").forEach((element) => {
     element.textContent = "";
@@ -677,9 +693,37 @@ async function loadSelectedJobLogs() {
   if (!id) return;
   const job = await api(`/api/jobs/${id}`);
   state.selectedJob = job;
-  $("#jobLogs").textContent = job.logs.length
-    ? job.logs.map((entry) => `[${entry.at}] ${entry.stream}: ${entry.line}`).join("\n")
-    : "No logs yet";
+  $("#jobLogs").textContent = formatJobLogs(job);
+}
+
+function formatJobLogs(job) {
+  return job.logs?.map((entry) => `[${entry.at}] ${entry.stream}: ${entry.line}`).join("\n") || "No logs yet";
+}
+
+function renderCommandJob(job) {
+  const status = $("#commandStatus");
+  let message = "";
+  if (job?.status === "queued") message = `${job.label} · queued #${job.queuePosition}`;
+  else if (job?.status === "running") message = `${job.label} · running`;
+  else if (job?.exitCode != null) message = `${job.label} · exit code ${job.exitCode}`;
+  else if (job) message = `${job.label} · ${job.status}`;
+  if (status.textContent !== message) status.textContent = message;
+  const output = $("#commandLogs");
+  const lines = job ? formatJobLogs(job) : "No command output yet";
+  if (output.textContent !== lines) {
+    const followOutput = output.scrollHeight - output.scrollTop - output.clientHeight <= 8;
+    output.textContent = lines;
+    if (followOutput) output.scrollTop = output.scrollHeight;
+  }
+}
+
+async function refreshCommandJob() {
+  const current = state.commandJob;
+  if (!current || !["queued", "running"].includes(current.status)) return;
+  const job = await api(`/api/jobs/${encodeURIComponent(current.id)}`);
+  if (state.commandJob !== current) return;
+  state.commandJob = job;
+  renderCommandJob(job);
 }
 
 function showView(viewId) {
@@ -718,6 +762,44 @@ function renderThemeControls() {
 }
 
 function wireEvents() {
+  const commandWindow = $("#commandWindow");
+  const commandError = $("#commandError");
+  $("#openCommandWindow").addEventListener("click", () => {
+    commandWindow.showModal();
+    refreshCommandJob().catch((error) => { commandError.textContent = error.message; });
+  });
+  $("#commandForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = form.elements.command;
+    const submit = form.querySelector("button[type='submit']");
+    if (submit.disabled) return;
+    submit.disabled = true;
+    input.readOnly = true;
+    commandError.textContent = "";
+    try {
+      const job = await api("/api/commands", {
+        method: "POST",
+        body: JSON.stringify({ command: input.value })
+      });
+      form.reset();
+      if (job.kind === "amazon-login") {
+        commandWindow.close();
+        showView("accounts");
+        showAmazonLoginJob(job);
+        return;
+      }
+      state.commandJob = job;
+      upsertJob(job);
+      renderJobs();
+      renderCommandJob(job);
+    } catch (error) {
+      commandError.textContent = Object.values(error.details || {}).join(" ") || error.message;
+    } finally {
+      input.readOnly = false;
+      submit.disabled = false;
+    }
+  });
   document.addEventListener("click", async (event) => {
     const actionButton = event.target.closest("[data-action]");
     const navButton = event.target.closest("[data-nav]");
@@ -781,12 +863,7 @@ function wireEvents() {
         method: "POST",
         body: JSON.stringify(payload)
       });
-      state.activeAmazonLoginId = job.id;
-      state.amazonLoginLinkOpened = false;
-      state.amazonLoginReadyAnnounced = false;
-      upsertJob(job);
-      renderJobs();
-      $("#amazonLoginProgressTitle").focus({ preventScroll: true });
+      showAmazonLoginJob(job);
     } catch (error) {
       renderAmazonErrors(form, error.details || {});
       toast(error.message);
@@ -904,6 +981,9 @@ async function boot() {
     if (!state.session?.authenticated) return;
     await Promise.all([loadStatus(), loadJobs()]);
     if (state.selectedJob?.id) await loadSelectedJobLogs();
+    if ($("#commandWindow").open) {
+      await refreshCommandJob().catch((error) => { $("#commandError").textContent = error.message; });
+    }
   }, 5000);
 }
 

@@ -12,6 +12,9 @@ case "${1:-}" in
       echo "No accounts configured."
     fi
     ;;
+  liberate)
+    printf 'Synthetic CLI arguments: %s\n' "$*"
+    ;;
   login-external)
     echo "Open this URL in your web browser and sign in:"
     echo "https://www.amazon.de/ap/signin?state=synthetic-container-state"

@@ -51,6 +51,17 @@
       "security_critical": true
     },
     {
+      "id": "COMMAND-001",
+      "title": "Libation command window",
+      "priority": "high",
+      "acceptance": [
+        "An admin can run supported Libation commands from the dashboard and read their job output and exit status.",
+        "Command submission requires an admin session and rejects cross-site requests, unknown commands, and unsupported arguments.",
+        "Downloads use the existing job queue and interactive Amazon login uses the guided sign-in flow."
+      ],
+      "security_critical": true
+    },
+    {
       "id": "UI-001",
       "title": "Consistent English interface",
       "priority": "high",

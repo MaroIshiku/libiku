@@ -348,6 +348,27 @@ svg {
   line-height: 19px;
 }
 
+.command-window {
+  inline-size: min(48rem, calc(100% - var(--space-4) - var(--space-4)));
+  max-block-size: calc(100% - var(--space-4) - var(--space-4));
+  overflow: auto;
+}
+
+.command-window[open] {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.command-window::backdrop {
+  background: color-mix(in srgb, var(--color-on-surface) 35%, transparent);
+}
+
+.command-window .logs {
+  min-block-size: 8rem;
+  max-block-size: 38dvh;
+  overflow-wrap: anywhere;
+}
+
 .technical-list {
   display: grid;
   gap: var(--space-2);
