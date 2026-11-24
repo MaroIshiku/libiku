@@ -134,6 +134,7 @@
     {
       "id": "REL-001",
       "implementation": [
+        ".github/workflows/publish-container.yml",
         ".github/workflows/ishiku-pull-request-verify.yml",
         ".github/workflows/ishiku-release-release.yml",
         ".ishiku/kit/scripts/check-release"

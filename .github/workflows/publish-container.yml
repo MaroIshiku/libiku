@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish Libiku container
 
 on:
   push:
@@ -12,11 +12,25 @@ on:
 
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: libiku-container-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/ishiku-pull-request-verify.yml
+    with:
+      require_all_verified: true
+
   docker:
-    runs-on: ubuntu-latest
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
