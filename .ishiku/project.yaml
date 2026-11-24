@@ -54,6 +54,11 @@
         "name": "amazon-account-flow",
         "command": "npm run test:container",
         "required_for_verified": true
+      },
+      {
+        "name": "libation-upgrade",
+        "command": "bash test/libation-upgrade-smoke.sh",
+        "required_for_verified": true
       }
     ]
   },

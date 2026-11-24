@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
 ARG LIBATION_REPO=https://github.com/rmcrackan/Libation.git
-ARG LIBATION_REF=7b09a3bfef39c2f6ab28f526b179cb11d3b8360e
-ARG SQLITEPCLRAW_BUNDLE_VERSION=2.1.12
+# Libation v14.2.5
+ARG LIBATION_REF=8003ae6f29ef28f057e1df994da13817dbdda670
+ARG SQLITEPCLRAW_BUNDLE_VERSION=2.1.14
 
-FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0@sha256:72dd743782f2ae7e5476fd64f6a460045e3998dc862218b80e6944cba79a01b0 AS libation-build
+FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/sdk:10.0.404@sha256:8c6edfb26c85153f236d26efebd9ad349aec403583f343f201ee67838b23658d AS libation-build
 ARG TARGETARCH
 ARG LIBATION_REPO
 ARG LIBATION_REF
@@ -21,8 +22,8 @@ RUN git init Libation \
     && git -C Libation checkout --detach FETCH_HEAD \
     && test "$(git -C Libation rev-parse HEAD)" = "${LIBATION_REF}"
 
-# Libation v13.7.5 resolves SQLitePCLRaw 2.1.11 transitively. Pin the
-# upstream-compatible patched bundle so the published CLI carries SQLite >=3.50.2.
+# Libation v14.2.5 resolves SQLitePCLRaw 2.1.13 through EF Core 10.0.14.
+# Use the current patch in the same bundle series.
 RUN dotnet add \
       /src/Libation/Source/LibationCli/LibationCli.csproj \
       package SQLitePCLRaw.bundle_e_sqlite3 \
@@ -45,7 +46,7 @@ RUN case "${TARGETARCH}" in \
       -p:PublishReadyToRun=true \
       -p:SelfContained=true
 
-FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+FROM node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
 
 ARG USER_UID=1001
 ARG USER_GID=1001

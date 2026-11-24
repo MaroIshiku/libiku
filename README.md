@@ -28,7 +28,7 @@ The first launch uses the shared admin setup with a Docker secret. After that, p
 ## Tech Stack
 
 - Node.js without a frontend framework.
-- Libation CLI from the upstream Libation repository.
+- [Libation CLI 14.2.5](https://github.com/rmcrackan/Libation/releases/tag/v14.2.5), built from the release commit in `Dockerfile`.
 - SQLite access through `sqlite3` in the container, read-only for library data.
 - Docker multi-stage build with .NET SDK for Libation and Node runtime for Libiku.
 - Pixel Soft Utility design system with local CSS/JS, local icon sprite, and local logo.
@@ -159,14 +159,17 @@ The Compose files use these paths by default:
 
 ## Updates and Backup
 
-Pull new images and recreate the stack:
+Stop Libiku and back up the persistent `/config`, `/db`, and `/data` directories before updating. For Gluetun deployments, include `/gluetun` in the backup to preserve its state.
+
+Pull the image selected by your Compose file and recreate the stack:
 
 ```bash
 docker compose -f docker-compose.yml pull
 docker compose -f docker-compose.yml up -d
 ```
 
-Back up the persistent `/config`, `/db`, and `/data` directories before updates. In Gluetun mode, also back up `/gluetun` if its state should be preserved.
+Set `LIBIKU_IMAGE=ghcr.io/maroishiku/libiku:latest` in `.env` to follow builds from `main`.
+Libation 14.2.5 upgrades the library database on first use. To roll back to Libation 13.7.5, stop Libiku, restore the pre-upgrade backup, and set `LIBIKU_IMAGE=ghcr.io/maroishiku/libiku:v0.2.6@sha256:4883774cc8144249087e79f5d6c4f86800b56c7f5fad844297516fdffdf48ad5` before recreating the stack.
 
 ## Development
 

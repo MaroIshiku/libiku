@@ -5,12 +5,14 @@
     {
       "id": "CORE-001",
       "implementation": [
+        "Dockerfile",
         "server/",
         "public/"
       ],
       "tests": {
         "unit": [],
         "integration": [
+          "test/libation-upgrade-smoke.sh",
           ".ishiku/kit/scripts/compliance-test"
         ],
         "e2e": [],
@@ -111,11 +113,14 @@
     {
       "id": "OPS-001",
       "implementation": [
+        "Dockerfile",
+        "README.md",
         "See migration inventory and application source."
       ],
       "tests": {
         "unit": [],
         "integration": [
+          "test/libation-upgrade-smoke.sh",
           ".ishiku/reports/ops-001-verification.json",
           ".ishiku/kit/scripts/compliance-test"
         ],
